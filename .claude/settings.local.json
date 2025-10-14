@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "mcp__context7__get-library-docs",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
