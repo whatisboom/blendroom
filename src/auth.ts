@@ -22,6 +22,7 @@ const SPOTIFY_SCOPES = [
 ].join(" ");
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   providers: [
     Spotify({
       clientId: process.env.SPOTIFY_CLIENT_ID!,
