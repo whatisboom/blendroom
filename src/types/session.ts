@@ -1,0 +1,53 @@
+/**
+ * Session types
+ */
+
+import { Participant, TasteProfile } from './user';
+import { QueueItem } from './queue';
+import { VoteState } from './vote';
+import { PlaybackMode } from './spotify';
+import { AudioFeatures } from './spotify';
+
+export interface SessionSettings {
+  voteToSkip: boolean;
+  skipThreshold: number;           // Number of votes needed
+  playbackMode: PlaybackMode;
+}
+
+export interface SessionProfile {
+  avgAudioFeatures: AudioFeatures;
+  commonArtists: string[];         // Artist IDs
+  commonGenres: string[];
+  tasteProfiles: TasteProfile[];
+}
+
+export interface Session {
+  id: string;
+  code: string;                    // Unique join code
+  hostId: string;
+  participants: Participant[];
+  djs: string[];                   // User IDs with DJ privileges
+  settings: SessionSettings;
+  queue: QueueItem[];
+  votes: VoteState;
+  profile?: SessionProfile;        // Aggregated taste profile
+  createdAt: number;               // Timestamp
+  updatedAt: number;               // Timestamp
+  lastParticipantChange: number;   // Timestamp for debouncing regen
+  activeDeviceId?: string;         // For device playback mode
+}
+
+export interface CreateSessionInput {
+  hostId: string;
+  settings?: Partial<SessionSettings>;
+}
+
+export interface JoinSessionInput {
+  code: string;
+  userId: string;
+}
+
+export interface UpdateSessionSettingsInput {
+  sessionId: string;
+  settings: Partial<SessionSettings>;
+}
