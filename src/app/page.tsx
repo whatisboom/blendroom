@@ -1,8 +1,9 @@
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import Link from "next/link";
 
 export default async function Home() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8">

@@ -1,6 +1,5 @@
-import NextAuth from "next-auth";
-import Spotify from "next-auth/providers/spotify";
-import type { NextAuthConfig } from "next-auth";
+import { type NextAuthOptions } from "next-auth";
+import SpotifyProvider from "next-auth/providers/spotify";
 
 /**
  * Spotify scopes needed for the app:
@@ -21,10 +20,9 @@ const SPOTIFY_SCOPES = [
   "user-read-currently-playing",
 ].join(" ");
 
-export const authConfig: NextAuthConfig = {
-  trustHost: true,
+export const authOptions: NextAuthOptions = {
   providers: [
-    Spotify({
+    SpotifyProvider({
       clientId: process.env.SPOTIFY_CLIENT_ID!,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
       authorization: {
@@ -113,5 +111,3 @@ async function refreshAccessToken(token: Record<string, unknown>) {
     };
   }
 }
-
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
