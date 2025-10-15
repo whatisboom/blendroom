@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https",
+    "dev": "node server.js",
+    "dev:certs": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "ioredis": "^5.4.2",
+    "lucide-react": "^0.545.0",
     "nanoid": "^5.0.9",
     "next": "^15.1.6",
     "next-auth": "^4.24.11",
