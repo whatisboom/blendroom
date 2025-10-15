@@ -65,6 +65,7 @@ export class SessionService {
       djs: [hostId],
       settings: defaultSettings,
       queue: [],
+      playedTracks: [],
       votes: {
         skip: [],
         like: [],

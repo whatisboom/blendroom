@@ -66,6 +66,17 @@ export class SpotifyService {
   }
 
   /**
+   * Get available genre seeds from Spotify
+   */
+  async getAvailableGenreSeeds(): Promise<string[]> {
+    return spotifyRateLimiter.execute(async () => {
+      const client = createSpotifyClient(this.accessToken);
+      const response = await client.getAvailableGenreSeeds();
+      return response.body.genres;
+    });
+  }
+
+  /**
    * Get recommendations based on seed tracks, artists, and target audio features
    */
   async getRecommendations(params: {
@@ -74,12 +85,14 @@ export class SpotifyService {
     seedGenres?: string[];
     targetFeatures?: Partial<AudioFeatures>;
     limit?: number;
+    market?: string;
   }): Promise<Track[]> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
 
       const options: Record<string, unknown> = {
         limit: params.limit || 50,
+        market: params.market || "US", // Add market parameter to avoid regional restrictions
       };
 
       if (params.seedTracks) options.seed_tracks = params.seedTracks.slice(0, 5);
@@ -102,8 +115,16 @@ export class SpotifyService {
         }
       }
 
-      const response = await client.getRecommendations(options);
-      return response.body.tracks as Track[];
+      console.log("Calling Spotify recommendations API with options:", JSON.stringify(options, null, 2));
+
+      try {
+        const response = await client.getRecommendations(options);
+        return response.body.tracks as Track[];
+      } catch (error) {
+        console.error("Spotify recommendations API error:", error);
+        console.error("Options that caused the error:", JSON.stringify(options, null, 2));
+        throw error;
+      }
     });
   }
 
@@ -115,6 +136,36 @@ export class SpotifyService {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.searchTracks(query, { limit });
       return response.body.tracks?.items as SpotifyTrack[] || [];
+    });
+  }
+
+  /**
+   * Search for tracks by artist ID
+   */
+  async searchTracksByArtist(artistId: string, limit = 20): Promise<Track[]> {
+    return spotifyRateLimiter.execute(async () => {
+      const client = createSpotifyClient(this.accessToken);
+
+      // Get artist's top tracks
+      const response = await client.getArtistTopTracks(artistId, "US");
+
+      // Return up to limit tracks
+      return (response.body.tracks as Track[]).slice(0, limit);
+    });
+  }
+
+  /**
+   * Search for tracks by genre using search query
+   */
+  async searchTracksByGenre(genre: string, limit = 20): Promise<Track[]> {
+    return spotifyRateLimiter.execute(async () => {
+      const client = createSpotifyClient(this.accessToken);
+
+      // Use genre as a search query
+      const query = `genre:"${genre}"`;
+      const response = await client.searchTracks(query, { limit });
+
+      return (response.body.tracks?.items as Track[]) || [];
     });
   }
 

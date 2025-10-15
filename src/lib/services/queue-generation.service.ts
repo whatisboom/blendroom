@@ -1,6 +1,8 @@
 import { SpotifyService } from "./spotify.service";
+import { GenreValidationService } from "./genre-validation.service";
 import { scoreTracks, sortByScore } from "../algorithm/scoring";
 import type { Session, Track, QueueItem, TasteProfile } from "@/types";
+import type { SessionStore } from "@/lib/session-store/types";
 
 /**
  * Service for generating music queues based on session taste profile
@@ -8,9 +10,11 @@ import type { Session, Track, QueueItem, TasteProfile } from "@/types";
  */
 export class QueueGenerationService {
   private spotifyService: SpotifyService;
+  private genreValidation: GenreValidationService;
 
-  constructor(accessToken: string) {
+  constructor(accessToken: string, store: SessionStore) {
     this.spotifyService = new SpotifyService(accessToken);
+    this.genreValidation = new GenreValidationService(store, accessToken);
   }
 
   /**
@@ -35,11 +39,14 @@ export class QueueGenerationService {
       targetSize * 3 // Get 3x more candidates for better selection
     );
 
-    // 2. Remove duplicates (already in queue or played recently)
+    // 2. Remove duplicates (already in queue, played recently, or already played)
     const existingTrackIds = new Set(session.queue.map((q) => q.track.id));
+    const playedTrackIds = new Set(session.playedTracks || []);
     const newCandidates = candidates.filter(
-      (t) => !existingTrackIds.has(t.id)
+      (t) => !existingTrackIds.has(t.id) && !playedTrackIds.has(t.id)
     );
+
+    console.log(`Filtered out ${candidates.length - newCandidates.length} duplicate/played tracks`);
 
     // 3. Score and rank tracks
     const scored = scoreTracks(
@@ -67,8 +74,8 @@ export class QueueGenerationService {
   }
 
   /**
-   * Get candidate tracks from Spotify using seed-based recommendations
-   * Strategy: 2 genres + 2 artists + 1 track (max 5 seeds)
+   * Get candidate tracks from Spotify using artist top tracks
+   * Strategy: Fetch top tracks from common artists and blend them
    */
   private async getCandidateTracks(
     commonArtists: string[],
@@ -76,30 +83,45 @@ export class QueueGenerationService {
     tasteProfiles: TasteProfile[],
     count: number
   ): Promise<Track[]> {
-    // Select seed genres (prioritize common genres)
-    const seedGenres = commonGenres.slice(0, 2);
-
     // Select seed artists (mix of common and individual favorites)
     const seedArtists = this.selectSeedArtists(commonArtists, tasteProfiles);
 
-    // Select seed tracks from taste profiles (for diversity)
-    const seedTracks = this.selectSeedTracks(tasteProfiles);
+    console.log(`Fetching tracks from ${seedArtists.length} artists`);
 
-    console.log(`Generating queue with seeds:`, {
-      genres: seedGenres,
-      artists: seedArtists.slice(0, 2),
-      tracks: seedTracks.slice(0, 1),
-    });
+    const allTracks: Track[] = [];
+    const tracksPerArtist = Math.ceil(count / Math.min(seedArtists.length, 5));
 
-    // Get recommendations (2 genres + 2 artists + 1 track = 5 seeds max)
-    const recommendations = await this.spotifyService.getRecommendations({
-      seedGenres,
-      seedArtists: seedArtists.slice(0, 2),
-      seedTracks: seedTracks.slice(0, 1),
-      limit: count,
-    });
+    // Get top tracks from each artist (limit to 5 artists)
+    for (const artistId of seedArtists.slice(0, 5)) {
+      try {
+        const tracks = await this.spotifyService.searchTracksByArtist(
+          artistId,
+          tracksPerArtist
+        );
+        allTracks.push(...tracks);
+        console.log(`Got ${tracks.length} tracks from artist ${artistId}`);
+      } catch (error) {
+        console.error(`Failed to get tracks for artist ${artistId}:`, error);
+      }
+    }
 
-    return recommendations;
+    // Shuffle tracks to mix artists
+    const shuffled = this.shuffleArray(allTracks);
+
+    console.log(`Successfully collected ${shuffled.length} candidate tracks from artists`);
+    return shuffled.slice(0, count);
+  }
+
+  /**
+   * Shuffle array using Fisher-Yates algorithm
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   /**

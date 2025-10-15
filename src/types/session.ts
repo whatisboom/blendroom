@@ -27,6 +27,7 @@ export interface Session {
   djs: string[];                   // User IDs with DJ privileges
   settings: SessionSettings;
   queue: QueueItem[];
+  playedTracks: string[];          // Track IDs that have already been played
   votes: VoteState;
   profile?: SessionProfile;        // Aggregated taste profile
   createdAt: number;               // Timestamp

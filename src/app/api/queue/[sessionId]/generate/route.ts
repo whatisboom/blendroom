@@ -54,7 +54,7 @@ export async function POST(
     }
 
     // Generate queue
-    const queueService = new QueueGenerationService(session.accessToken);
+    const queueService = new QueueGenerationService(session.accessToken, store);
     const newQueue = await queueService.generateQueue(targetSession);
 
     // Merge with stable tracks
@@ -74,6 +74,22 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error generating queue:", error);
+
+    // Handle Spotify API errors
+    if (error && typeof error === 'object' && 'body' in error) {
+      const spotifyError = error as { statusCode?: number; body?: { error?: { message?: string } } };
+      const errorMessage = spotifyError.body?.error?.message || "Spotify API error";
+      console.error("Spotify API error details:", {
+        statusCode: spotifyError.statusCode,
+        body: spotifyError.body,
+        message: errorMessage
+      });
+
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: spotifyError.statusCode || 400 }
+      );
+    }
 
     if (error instanceof Error) {
       return NextResponse.json(
