@@ -331,15 +331,20 @@ spotify-collab-app/
 17. Define `SessionSettings` type (voteToSkip, skipThreshold, playbackMode)
 18. Define WebSocket event types
 
-### **3. Authentication Setup**
-19. Register Spotify Developer App (get client ID/secret)
-20. Configure NextAuth with Spotify provider
-21. Set up JWT strategy with token refresh
-22. Create auth middleware for protected routes
-23. Add session token to include Spotify access token
-24. Create login page UI
-25. Create auth callback handling
-26. Test OAuth flow end-to-end
+### **3. Authentication Setup** ✅ COMPLETED
+19. ✅ Register Spotify Developer App (get client ID/secret)
+20. ✅ Configure NextAuth v4 with Spotify provider
+21. ✅ Set up JWT strategy with token refresh
+22. ✅ Create auth middleware for protected routes (using withAuth)
+23. ✅ Add session token to include Spotify access token
+24. ✅ Create login page UI
+25. ✅ Create auth callback handling (NextAuth handles automatically)
+26. ✅ Test OAuth flow end-to-end
+
+**Note**: Due to Spotify's 2025 security requirements, HTTPS with a custom domain is required for local development.
+- Configured Next.js with `--experimental-https` flag to auto-generate self-signed certificates
+- Using `dev.local` domain (mapped to 127.0.0.1 in `/etc/hosts`)
+- Spotify redirect URI: `https://dev.local:3000/api/auth/callback/spotify`
 
 ### **4. Session Store Abstraction**
 27. Create `SessionStore` interface (get, set, delete, list)
