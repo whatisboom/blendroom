@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
+import { triggerBackgroundRegeneration, cancelPendingRegeneration } from "@/lib/queue-background-regen";
 import { z } from "zod";
 
 const leaveSessionSchema = z.object({
@@ -43,6 +45,20 @@ export async function POST(req: NextRequest) {
 
     // Leave session
     await sessionService.leaveSession(sessionId, session.user.id);
+
+    // Broadcast participant left event
+    broadcastToSession(sessionId, "participant_left", session.user.id);
+
+    // Check if session still exists (has participants)
+    const updatedSession = await store.get(sessionId);
+
+    if (updatedSession && updatedSession.participants.length > 0) {
+      // Trigger background queue regeneration
+      triggerBackgroundRegeneration(sessionId, store, session.accessToken);
+    } else {
+      // Session was deleted (no participants left), cancel any pending regeneration
+      cancelPendingRegeneration(sessionId);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

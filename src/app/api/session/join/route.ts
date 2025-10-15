@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
+import { triggerBackgroundRegeneration } from "@/lib/queue-background-regen";
 import { z } from "zod";
 
 const joinSessionSchema = z.object({
@@ -47,6 +49,17 @@ export async function POST(req: NextRequest) {
       session.user.id,
       session.user.name || "Unknown"
     );
+
+    // Broadcast participant joined event to all clients in the session
+    const newParticipant = joinedSession.participants.find(
+      (p) => p.userId === session.user.id
+    );
+    if (newParticipant) {
+      broadcastToSession(joinedSession.id, "participant_joined", newParticipant);
+    }
+
+    // Trigger background queue regeneration
+    triggerBackgroundRegeneration(joinedSession.id, store, session.accessToken);
 
     return NextResponse.json({
       session: {
