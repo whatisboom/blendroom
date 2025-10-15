@@ -4,6 +4,7 @@ import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NowPlaying, ProgressBar, PlayerControls, DeviceSelector } from "@/components/player";
+import { AddTrackModal } from "@/components/queue/AddTrackModal";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
 import type { SpotifyTrack, PlaybackMode } from "@/types";
@@ -59,6 +60,7 @@ export default function SessionPage({
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
 
   // Playback state
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
@@ -442,6 +444,13 @@ export default function SessionPage({
     }
   };
 
+  const handleTrackAdded = () => {
+    // Show success toast
+    toast.success("Track added to queue");
+    // Refresh session (queue will also update via WebSocket)
+    fetchSession();
+  };
+
   // Check if current user is a DJ
   const isUserDJ = userSession?.user?.id && session?.participants.find(
     (p) => p.userId === userSession.user.id
@@ -551,6 +560,14 @@ export default function SessionPage({
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Queue</h2>
+              {isUserDJ && (
+                <button
+                  onClick={() => setIsAddTrackModalOpen(true)}
+                  className="text-sm px-4 py-2 bg-spotify-green hover:bg-green-600 text-white rounded-lg transition-colors"
+                >
+                  Add Track
+                </button>
+              )}
             </div>
 
             {session.queue.length === 0 ? (
@@ -655,6 +672,16 @@ export default function SessionPage({
           </div>
         </div>
       </div>
+
+      {/* Add Track Modal */}
+      {session && (
+        <AddTrackModal
+          isOpen={isAddTrackModalOpen}
+          onClose={() => setIsAddTrackModalOpen(false)}
+          sessionId={session.id}
+          onTrackAdded={handleTrackAdded}
+        />
+      )}
     </main>
   );
 }
