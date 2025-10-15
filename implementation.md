@@ -378,169 +378,221 @@ spotify-collab-app/
 51. Cache user taste profiles (invalidate after 1 hour)
 52. Test with diverse user combinations
 
-### **7. Queue Generation Algorithm**
-53. Create QueueGenerationService class
-54. Implement `generateQueue(sessionProfile, currentQueue, participants)`
-55. Implement track scoring function:
+### **7. Queue Generation Algorithm** ✅ COMPLETED
+53. ✅ Create QueueGenerationService class
+54. ✅ Implement `generateQueue(sessionProfile, currentQueue, participants)`
+55. ✅ Implement track scoring function:
     - Audio feature distance from session average
     - Liked track influence (boost similar features)
     - Artist/genre popularity among participants
     - Diversity penalty (avoid same artist consecutively)
-56. Implement stable queue logic (keep next 3 tracks)
-57. Implement deduplication (no repeat tracks)
-58. Fetch recommendations from Spotify based on seeds
-59. Score and rank all candidate tracks
-60. Return top 10 tracks
-61. Add logging for algorithm decisions
+56. ✅ Implement stable queue logic (keep next 3 tracks)
+57. ✅ Implement deduplication (no repeat tracks + played tracks tracking)
+58. ✅ Fetch tracks from artist top tracks (replaced deprecated recommendations API)
+59. ✅ Score and rank all candidate tracks
+60. ✅ Return top 10 tracks
+61. ✅ Add logging for algorithm decisions
 62. Test with edge cases (1 user, 20 users, conflicting tastes)
 
-### **8. Session API Routes**
-63. Create `POST /api/session/create` - generate unique code, init session
-64. Create `POST /api/session/join` - add user to session, trigger regen
-65. Create `GET /api/session/[id]` - return session data
-66. Create `DELETE /api/session/[id]` - end session (host only)
-67. Create `POST /api/session/leave` - remove user, trigger regen
-68. Create `GET /api/session/[id]/participants` - list participants
-69. Create `POST /api/session/[id]/djs` - add/remove DJ (host only)
-70. Create `PUT /api/session/[id]/settings` - update settings (host only)
-71. Add authentication checks to all routes
-72. Add authorization checks (host/DJ privileges)
+**Note**: Due to Spotify's recommendations API deprecation (November 2024), the queue generation now uses:
+- Artist top tracks instead of seed-based recommendations
+- Shuffle and blend tracks from top 5 common artists
+- Session `playedTracks` array to prevent duplicate songs across session lifetime
 
-### **9. Queue API Routes**
-73. Create `GET /api/queue/[sessionId]` - return current queue
-74. Create `POST /api/queue/[sessionId]/add` - DJ adds track
-75. Create `PUT /api/queue/[sessionId]/reorder` - DJ reorders queue
-76. Create `POST /api/queue/[sessionId]/generate` - manual trigger regen
-77. Add validation (DJ privileges, track exists)
-78. Broadcast queue updates via WebSocket
+### **8. Session API Routes** ✅ COMPLETED
+63. ✅ Create `POST /api/session/create` - generate unique code, init session
+64. ✅ Create `POST /api/session/join` - add user to session, trigger regen
+65. ✅ Create `GET /api/session/[id]` - return session data
+66. ✅ Create `DELETE /api/session/[id]` - end session (host only)
+67. ✅ Create `POST /api/session/leave` - remove user, trigger regen
+68. ✅ Create `GET /api/session/[id]/participants` - list participants
+69. ✅ Create `POST /api/session/[id]/djs` - add/remove DJ (host only)
+70. ✅ Create `PUT /api/session/[id]/settings` - update settings (host only)
+71. ✅ Add authentication checks to all routes
+72. ✅ Add authorization checks (host/DJ privileges)
 
-### **10. Playback API Routes**
-79. Create `POST /api/playback/init` - setup player (web or device)
-80. Create `POST /api/playback/play` - start playback (host/DJ only)
-81. Create `POST /api/playback/pause` - pause (host/DJ only)
-82. Create `POST /api/playback/skip` - skip track (host/DJ only)
-83. Create `GET /api/playback/state` - get current playback state
-84. Handle Web Playback SDK vs Device API modes
-85. Trigger queue regeneration check on track end
-86. Broadcast playback state changes via WebSocket
+### **9. Queue API Routes** ✅ COMPLETED
+73. ✅ Create `GET /api/queue/[sessionId]` - return current queue
+74. ✅ Create `POST /api/queue/[sessionId]/add` - DJ adds track
+75. ✅ Create `PUT /api/queue/[sessionId]/reorder` - DJ reorders queue
+76. ✅ Create `POST /api/queue/[sessionId]/generate` - manual trigger regen
+77. ✅ Add validation (DJ privileges, track exists, stable track protection)
+78. ✅ Broadcast queue updates via WebSocket (queue_updated event)
 
-### **11. Voting API Routes**
-87. Create `POST /api/vote/skip` - vote to skip current track
-88. Create `POST /api/vote/like` - like current track
-89. Implement skip logic: check threshold, auto-skip if reached
-90. Track votes per user per track (prevent duplicate votes)
-91. Invalidate votes when user leaves
-92. Store liked track features for algorithm influence
-93. Broadcast vote counts via WebSocket
+### **10. Playback API Routes** ✅ COMPLETED
+79. ✅ Create `POST /api/playback/init` - setup player (web or device)
+80. ✅ Create `POST /api/playback/play` - start playback (host/DJ only)
+81. ✅ Create `POST /api/playback/pause` - pause (host/DJ only)
+82. ✅ Create `POST /api/playback/skip` - skip track (host/DJ only)
+83. ✅ Create `POST /api/playback/play-from-queue` - play from specific queue position (DJ only)
+84. ✅ Create `POST /api/playback/track-change` - handle natural track progression
+85. ✅ Create `GET /api/playback/state` - get current playback state
+86. ✅ Handle Web Playback SDK vs Device API modes
+87. ✅ Broadcast playback state changes via WebSocket (playback_state_changed event)
+88. ✅ Broadcast queue updates when tracks are played/skipped
+89. ✅ Auto-repopulate queue when low (< 5 tracks)
 
-### **12. WebSocket Server**
-94. Set up Socket.io server in Next.js custom server
-95. Implement connection authentication (verify JWT)
-96. Create event handlers:
-    - `join_session` - add user to room
-    - `leave_session` - remove user from room
-    - `participant_joined` - broadcast to room
-    - `participant_left` - broadcast to room
-    - `queue_updated` - broadcast new queue
-    - `playback_state_changed` - broadcast state
-    - `vote_updated` - broadcast vote counts
-97. Handle disconnections and cleanup
-98. Add reconnection logic
-99. Test with multiple clients
+### **11. Voting API Routes** ✅ COMPLETED
+90. ✅ Create `POST /api/vote/skip` - vote to skip current track
+91. ✅ Create `POST /api/vote/like` - like current track (toggle like/unlike)
+92. ✅ Implement skip logic: check threshold, auto-skip if reached
+93. ✅ Track votes per user per track (prevent duplicate votes)
+94. ✅ Invalidate votes when user leaves
+95. ✅ Broadcast vote counts via WebSocket (vote_updated event)
+96. ✅ Broadcast track skipped event when threshold reached
+97. Store liked track features for algorithm influence (ready for implementation)
 
-### **13. Background Queue Regeneration**
-100. Create queue regeneration trigger on participant change
-101. Implement debouncing (wait 5 seconds after last change)
-102. Lock regeneration (prevent concurrent runs)
-103. Generate new queue in background
-104. Keep next 3 tracks stable
-105. Merge new tracks into queue after position 3
-106. Broadcast updated queue
-107. Add error handling and retry logic
+### **12. WebSocket Server** ✅ COMPLETED
+98. ✅ Set up Socket.io server in Next.js custom server (server.js created)
+99. ✅ Create WebSocket server module (`/src/lib/websocket/server.ts`)
+100. ✅ Create WebSocket type definitions (`/src/types/websocket.ts`)
+101. ✅ Implement session room management (join_session, leave_session handlers)
+102. ✅ Create broadcast utility function (`broadcastToSession`)
+103. ✅ Update package.json scripts to use custom server
+104. ✅ Integrate broadcasting into API routes:
+    - ✅ `participant_joined` - session/join route
+    - ✅ `participant_left` - session/leave route
+    - ✅ `queue_updated` - queue routes (add, reorder, generate)
+    - ✅ `playback_state_changed` - playback routes (play, pause, skip)
+    - ✅ `vote_updated` - vote routes (skip, like)
+    - ✅ `track_skipped` - vote/skip route when threshold reached
+105. ✅ Create client-side useSocket React hook (`/src/hooks/useSocket.ts`)
+106. ✅ Update session page to use WebSocket for real-time updates
+107. ✅ Reduced polling to 10s intervals (only for progress bar updates)
+108. ✅ Handle disconnections and cleanup
+109. ✅ Server running with Socket.IO properly initialized
 
-### **14. Frontend: Landing Page**
-108. Create landing page with hero section
-109. Add "Create Session" CTA
-110. Add "Join Session" form (enter code)
-111. Display app features and how it works
-112. Add Spotify login button
-113. Style with Tailwind (modern, clean design)
+**Socket.io vs Native WebSockets Decision**:
+Chose Socket.io for the following reasons:
+- **Room Management**: Built-in rooms perfect for session architecture (`io.to(sessionId).emit()`)
+- **Automatic Reconnection**: Critical for mobile/spotty connections
+- **Event-Based API**: Clean event naming matches our type definitions
+- **Authentication Integration**: Middleware support for JWT verification
+- **Fallback Support**: Auto-downgrades to HTTP long-polling if WebSocket fails
+- **Future Scaling**: Redis adapter available for horizontal scaling
 
-### **15. Frontend: Session Creation**
-114. Create session creation form
-115. Allow host to set initial settings (vote threshold, playback mode)
-116. Generate and display session code
-117. Copy-to-clipboard functionality
-118. Redirect to session page after creation
-119. Add loading states
+Trade-offs accepted:
+- Larger client bundle (~35KB vs ~2KB for native WS)
+- Small protocol overhead vs native WebSocket
+- Worth it for the significant reduction in boilerplate code (~500-800 lines)
 
-### **16. Frontend: Session Page Layout**
-120. Create session page with three-column layout (mobile: single column)
-121. Left sidebar: Participant list with roles (host, DJ, member)
-122. Center: Player controls and now playing
-123. Right sidebar: Queue display
-124. Add responsive breakpoints
+### **13. Background Queue Regeneration** ✅ COMPLETED
+100. ✅ Create queue regeneration trigger on participant change (`/src/lib/queue-background-regen.ts`)
+101. ✅ Implement debouncing (5 second delay to batch changes)
+102. ✅ Lock regeneration (prevent concurrent runs with in-memory locks)
+103. ✅ Generate new queue in background
+104. ✅ Keep next 3 tracks stable during regeneration
+105. ✅ Merge new tracks into queue after position 3
+106. ✅ Broadcast updated queue via WebSocket (`queue_updated` event)
+107. ✅ Add error handling and detailed logging
+108. ✅ Integrated into session join/leave routes
+109. ✅ Cancel pending regeneration when session is deleted
 
-### **17. Frontend: Participant List Component**
-125. Display all participants with avatars
-126. Show host badge
-127. Show DJ badges
-128. Host can click to assign/remove DJ role
-129. Show real-time join/leave animations
-130. Display participant count
+### **14. Frontend: Landing Page** ✅ COMPLETED
+108. ✅ Create landing page with hero section
+109. ✅ Add "Create Session" CTA
+110. ✅ Add "Join Session" form (enter code)
+111. ✅ Display app features and how it works
+112. ✅ Add Spotify login button
+113. ✅ Style with Tailwind (modern, clean design)
 
-### **18. Frontend: Player Controls**
-131. Display current track (artwork, title, artist)
-132. Show playback progress bar with time
-133. Add play/pause button (host/DJ only)
-134. Add skip button (host/DJ only)
-135. Show playback mode indicator (web/device)
-136. Disable controls for non-DJ participants
-137. Add loading states during actions
+### **15. Frontend: Session Creation** ✅ COMPLETED
+114. ✅ Create session creation form
+115. ✅ Allow host to set initial settings (vote threshold, playback mode)
+116. ✅ Generate and display session code
+117. ✅ Copy-to-clipboard functionality
+118. ✅ Redirect to session page after creation
+119. ✅ Add loading states
 
-### **19. Frontend: Queue Display**
-138. Display next 10 tracks in queue
-139. Highlight next 3 stable tracks
-140. Show track info (title, artist, duration)
-141. Add reorder drag handles (DJ only)
-142. Add "Add Track" button (DJ only)
-143. Show who added each manual track
-144. Add smooth transitions when queue updates
+### **16. Frontend: Session Page Layout** ✅ COMPLETED
+120. ✅ Create session page with grid layout (responsive)
+121. ✅ Participant list with roles (host, DJ, member)
+122. ✅ Center: Player controls and now playing
+123. ✅ Queue display with track details
+124. ✅ Add responsive breakpoints
 
-### **20. Frontend: Voting UI**
-145. Add vote-to-skip button for all participants
-146. Show vote progress (X/Y votes)
-147. Disable after user votes
-148. Add like button for current track
-149. Show like count
-150. Animate button states
-151. Show toast when skip threshold reached
+### **17. Frontend: Participant List Component** ✅ COMPLETED
+125. ✅ Display all participants
+126. ✅ Show host badge
+127. ✅ Show DJ badges
+128. ✅ Host can click to assign/remove DJ role (Make DJ/Remove DJ buttons)
+129. ✅ Real-time join/leave updates via WebSocket
+130. ✅ Display participant count
 
-### **21. Frontend: Add Track Modal**
-152. Create search modal (DJ only)
-153. Spotify track search input
-154. Display search results with preview
-155. Add track to queue on selection
-156. Show insertion position in queue
-157. Close modal after adding
+### **18. Frontend: Player Controls** ✅ COMPLETED
+131. ✅ Display current track (artwork, title, artist)
+132. ✅ Show playback progress bar with time
+133. ✅ Add play/pause button (host/DJ only)
+134. ✅ Add skip button (host/DJ only)
+135. ✅ Show playback mode indicator (web/device)
+136. ✅ Disable controls for non-DJ participants
+137. ✅ Add loading states during actions
+138. ✅ Show device name and type with icons
 
-### **22. Frontend: Session Settings Modal**
-158. Create settings modal (host only)
-159. Toggle vote-to-skip on/off
-160. Set skip threshold slider
-161. Select playback mode (web/device)
-162. Save settings and broadcast update
-163. Show confirmation toast
+### **19. Frontend: Queue Display** ✅ COMPLETED
+139. ✅ Display next 10-20 tracks in queue
+140. ✅ Highlight next 3 stable tracks
+141. ✅ Show track info (title, artist, duration, album art)
+142. ✅ Real-time queue updates via WebSocket
+143. ✅ Click-to-play from queue (DJ only)
+144. Add reorder drag handles (DJ only) - pending implementation
+145. ✅ Add "Add Track" button (DJ only) - opens AddTrackModal
+146. Show who added each manual track - pending implementation
 
-### **23. Frontend: WebSocket Integration**
-164. Create WebSocket hook (`useWebSocket`)
-165. Connect to session room on mount
-166. Listen for participant events and update UI
-167. Listen for queue updates and refresh display
-168. Listen for playback state changes
-169. Listen for vote updates
-170. Handle disconnections and reconnect
-171. Clean up on unmount
+### **20. Frontend: Voting UI** ✅ COMPLETED
+147. ✅ Add vote-to-skip button for all participants
+148. ✅ Show vote progress (X/Y votes)
+149. ✅ Disable after user votes
+150. ✅ Add like button for current track
+151. ✅ Show like count
+152. ✅ Animate button states - basic implementation
+153. ✅ Show toast when skip threshold reached
+
+### **21. Frontend: Add Track Modal** ✅ COMPLETED
+154. ✅ Create search modal (DJ only) (`/src/components/queue/AddTrackModal.tsx`)
+155. ✅ Spotify track search input with debouncing (500ms)
+156. ✅ Display search results with track preview (artwork, title, artist)
+157. ✅ Add track to queue on selection (`POST /api/queue/[sessionId]/add`)
+158. ✅ Search API endpoint created (`/src/app/api/search/tracks/route.ts`)
+159. ✅ Close modal after adding with success feedback
+
+### **22. Frontend: Session Settings Modal** ✅ COMPLETED
+160. ✅ Create settings modal (host only) (`/src/components/session/SessionSettingsModal.tsx`)
+161. ✅ Toggle vote-to-skip on/off
+162. ✅ Set skip threshold slider (1-20 votes)
+163. ✅ Select playback mode (web/device)
+164. ✅ Save settings and broadcast update via WebSocket (`session_settings_updated` event)
+165. ✅ Settings update API integrated (`PUT /api/session/[id]/settings`)
+
+### **23. Frontend: WebSocket Integration** ✅ COMPLETED
+166. ✅ Create WebSocket hook (`useSocket`) with connection management
+167. ✅ Connect to session room on mount with auto-join
+168. ✅ Listen for participant events (participant_joined, participant_left) and update UI
+169. ✅ Listen for queue updates (queue_updated) and refresh display
+170. ✅ Listen for playback state changes (playback_state_changed)
+171. ✅ Listen for vote updates (vote_updated, track_skipped)
+172. ✅ Handle disconnections and automatic reconnect logic
+173. ✅ Clean up on unmount (leave session, disconnect socket)
+
+### **23.5. WebSocket Constants Refactoring** ✅ COMPLETED
+173a. ✅ Create WebSocket event constants (`/src/lib/websocket/events.ts`)
+173b. ✅ Define `WS_EVENTS` object with all event names
+173c. ✅ Update all API routes to use constants instead of string literals
+173d. ✅ Update WebSocket server to use constants
+173e. ✅ Update client-side `useSocket` hook to use constants
+173f. ✅ Update session page event listeners to use constants
+173g. ✅ Add type safety and IDE autocomplete for event names
+
+### **23.6. Toast Notification System** ✅ COMPLETED
+173h. ✅ Create Toast component (`/src/components/ui/Toast.tsx`)
+173i. ✅ Create ToastProvider with React Context (`/src/components/ui/ToastProvider.tsx`)
+173j. ✅ Support success, error, info, warning toast types
+173k. ✅ Add auto-dismiss with configurable duration
+173l. ✅ Add toast animations (slide-in, fade-out) in globals.css
+173m. ✅ Install lucide-react for toast icons
+173n. ✅ Integrate ToastProvider into app providers
+173o. ✅ Add toast notifications for all WebSocket events in session page
+173p. ✅ Display toasts for participant join/leave, track skipped, DJ assigned/removed, etc.
 
 ### **24. Frontend: Web Playback SDK Integration**
 172. Load Spotify Web Playback SDK script
@@ -896,12 +948,96 @@ When scaling becomes necessary:
    - Better durability and querying
    - Session history and analytics
 
-## Next Steps
+## Current Status Summary
 
-1. Start with **Project Setup & Configuration** (items 1-10)
-2. Define **Type Definitions** (items 11-18)
-3. Set up **Authentication** (items 19-26)
-4. Build core **Services** layer (items 27-62)
-5. Implement **API Routes** (items 63-93)
-6. Build **Frontend** (items 108-186)
-7. Deploy and test (items 187-210)
+### ✅ Completed Core Features:
+- Authentication with Spotify OAuth (HTTPS with custom domain for local dev)
+- Session management (create, join, leave)
+- Queue generation algorithm with taste analysis (artist-based)
+- Playback control with device selection and initialization
+- Voting system (skip & like with toggle support)
+- Frontend UI (landing, session page, player controls, queue display)
+- Device info display with icons in player controls
+- Click-to-play from queue (DJ only)
+- Auto-repopulate queue when low (< 5 tracks)
+- Natural track progression handling
+- **Background queue regeneration** with debouncing (5s) and locking
+- **Toast notification system** with context provider for real-time feedback
+- **DJ management UI** (host can assign/remove DJ privileges via buttons)
+- **Add Track modal** with Spotify search and debouncing (DJ feature)
+- **Session Settings modal** (host can configure vote-to-skip, threshold, playback mode)
+- **WebSocket event constants** for type safety and maintainability
+- **Reusable Modal component** for all modal dialogs
+
+### ✅ API Routes - COMPLETED
+**Session Management**:
+- ✅ Create, join, leave sessions
+- ✅ Participant management
+- ✅ DJ role assignment
+- ✅ Session settings updates
+
+**Queue Management**:
+- ✅ Get queue
+- ✅ Add tracks (DJ only)
+- ✅ Reorder queue with stable track protection (DJ only)
+- ✅ Manual queue generation trigger
+
+**Playback Control**:
+- ✅ Initialize playback (device/web mode selection)
+- ✅ Play/pause/skip controls
+- ✅ Play from specific queue position
+- ✅ Track natural track progression
+- ✅ Get playback state
+
+**Voting**:
+- ✅ Vote to skip with threshold checking
+- ✅ Like/unlike tracks
+
+### ✅ Real-time WebSocket Integration - COMPLETED
+**Server-side**:
+- ✅ Socket.IO server initialized in custom Next.js server (server.js)
+- ✅ Room management (join/leave session)
+- ✅ Broadcast utility (`broadcastToSession`)
+- ✅ Type-safe WebSocket events (`/src/types/websocket.ts`)
+- ✅ All events integrated into API routes:
+  - `participant_joined` - session/join route
+  - `participant_left` - session/leave route
+  - `queue_updated` - queue routes (add, reorder, generate, playback actions)
+  - `playback_state_changed` - playback routes (play, pause, skip)
+  - `vote_updated` - vote routes (skip, like)
+  - `track_skipped` - vote/skip route when threshold reached
+
+**Client-side**:
+- ✅ `useSocket` React hook with connection management
+- ✅ Auto-reconnection with exponential backoff
+- ✅ Session room auto-join on mount
+- ✅ Real-time event listeners in session page:
+  - Participant join/leave updates
+  - Queue updates
+  - Playback state changes
+  - Vote counts
+- ✅ Graceful cleanup on unmount
+- ✅ Reduced polling to 10s intervals (only for progress bar)
+
+**Important**: The server must be started with `npm run dev` (which uses the custom server.js) to enable Socket.IO.
+
+## Immediate Next Steps
+
+### 1. Testing WebSocket with Real Users
+- Open session in multiple browser windows/devices
+- Verify real-time synchronization:
+  - Participant join/leave updates
+  - Queue changes propagate instantly
+  - Playback controls sync across clients
+  - Vote counts update in real-time
+
+### 2. Optional Enhancements
+
+## Future Enhancements (Phase 2)
+- Drag-and-drop queue reordering (DJ feature)
+- Display who added each manual track in queue
+- Session analytics and history
+- Advanced algorithm tuning (genre balancing, energy pacing)
+- Web Playback SDK integration for in-browser playback
+- Session customization (mood, explicit filter, era preferences)
+- Advanced animations and visualizations
