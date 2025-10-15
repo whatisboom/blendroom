@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 
 const updateSettingsSchema = z.object({
@@ -52,6 +53,9 @@ export async function PUT(
       session.user.id,
       validation.data
     );
+
+    // Broadcast settings update to all participants
+    broadcastToSession(id, WS_EVENTS.SESSION_SETTINGS_UPDATED, updatedSession.settings);
 
     return NextResponse.json({
       session: {

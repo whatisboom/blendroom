@@ -2,6 +2,7 @@ import { QueueGenerationService } from "./services/queue-generation.service";
 import { SessionService } from "./services/session.service";
 import type { SessionStore } from "./session/store.interface";
 import { broadcastToSession } from "./websocket/server";
+import { WS_EVENTS } from "./websocket/events";
 import { MAX_QUEUE_SIZE } from "./constants";
 
 /**
@@ -107,7 +108,7 @@ async function executeQueueRegeneration(
     console.log(`[QueueRegen] Updated queue with ${mergedQueue.length} total tracks (${stableTracks.length} stable, ${newQueue.length} new)`);
 
     // Broadcast queue update to all clients
-    broadcastToSession(sessionId, "queue_updated", mergedQueue);
+    broadcastToSession(sessionId, WS_EVENTS.QUEUE_UPDATED, mergedQueue);
     console.log(`[QueueRegen] Broadcasted queue update to session ${sessionId}`);
 
   } catch (error) {

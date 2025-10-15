@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { WS_EVENTS } from "@/lib/websocket/events";
 import { triggerBackgroundRegeneration, cancelPendingRegeneration } from "@/lib/queue-background-regen";
 import { z } from "zod";
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     await sessionService.leaveSession(sessionId, session.user.id);
 
     // Broadcast participant left event
-    broadcastToSession(sessionId, "participant_left", session.user.id);
+    broadcastToSession(sessionId, WS_EVENTS.PARTICIPANT_LEFT, session.user.id);
 
     // Check if session still exists (has participants)
     const updatedSession = await store.get(sessionId);

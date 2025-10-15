@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { WS_EVENTS } from "@/lib/websocket/events";
 import { z } from "zod";
 
 const manageDJSchema = z.object({
@@ -58,9 +59,9 @@ export async function POST(
 
     // Broadcast DJ change event
     if (action === "add") {
-      broadcastToSession(id, "dj_assigned", userId);
+      broadcastToSession(id, WS_EVENTS.DJ_ASSIGNED, userId);
     } else {
-      broadcastToSession(id, "dj_removed", userId);
+      broadcastToSession(id, WS_EVENTS.DJ_REMOVED, userId);
     }
 
     return NextResponse.json({

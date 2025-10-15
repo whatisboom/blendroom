@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { WS_EVENTS } from "@/lib/websocket/events";
 import { triggerBackgroundRegeneration } from "@/lib/queue-background-regen";
 import { z } from "zod";
 
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
       (p) => p.userId === session.user.id
     );
     if (newParticipant) {
-      broadcastToSession(joinedSession.id, "participant_joined", newParticipant);
+      broadcastToSession(joinedSession.id, WS_EVENTS.PARTICIPANT_JOINED, newParticipant);
     }
 
     // Trigger background queue regeneration

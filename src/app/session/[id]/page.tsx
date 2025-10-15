@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NowPlaying, ProgressBar, PlayerControls, DeviceSelector } from "@/components/player";
 import { AddTrackModal } from "@/components/queue/AddTrackModal";
+import { SessionSettingsModal } from "@/components/session/SessionSettingsModal";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
+import { WS_EVENTS } from "@/lib/websocket/events";
 import type { SpotifyTrack, PlaybackMode } from "@/types";
 
 interface QueueItem {
@@ -61,6 +63,7 @@ export default function SessionPage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Playback state
   const [currentTrack, setCurrentTrack] = useState<SpotifyTrack | null>(null);
@@ -88,13 +91,13 @@ export default function SessionPage({
     console.log("[SessionPage] Setting up WebSocket event listeners");
 
     // Listen for participant events
-    socket.on("participant_joined", (participant) => {
+    socket.on(WS_EVENTS.PARTICIPANT_JOINED, (participant) => {
       console.log("[SessionPage] Participant joined:", participant);
       toast.info(`${participant.name} joined the session`);
       fetchSession();
     });
 
-    socket.on("participant_left", (userId) => {
+    socket.on(WS_EVENTS.PARTICIPANT_LEFT, (userId) => {
       console.log("[SessionPage] Participant left:", userId);
       // Don't show toast for current user leaving (they'll see the redirect)
       if (userId !== userSession?.user?.id) {
@@ -107,13 +110,13 @@ export default function SessionPage({
     });
 
     // Listen for queue updates
-    socket.on("queue_updated", (queue) => {
+    socket.on(WS_EVENTS.QUEUE_UPDATED, (queue) => {
       console.log("[SessionPage] Queue updated:", queue.length, "tracks");
       setSession((prev) => prev ? { ...prev, queue } : null);
     });
 
     // Listen for playback state changes
-    socket.on("playback_state_changed", (state) => {
+    socket.on(WS_EVENTS.PLAYBACK_STATE_CHANGED, (state) => {
       console.log("[SessionPage] Playback state changed:", state);
       if (state.item) {
         setCurrentTrack(state.item);
@@ -124,12 +127,12 @@ export default function SessionPage({
     });
 
     // Listen for vote updates
-    socket.on("vote_updated", (data) => {
+    socket.on(WS_EVENTS.VOTE_UPDATED, (data) => {
       console.log("[SessionPage] Vote updated:", data);
     });
 
     // Listen for track skipped
-    socket.on("track_skipped", (data) => {
+    socket.on(WS_EVENTS.TRACK_SKIPPED, (data) => {
       console.log("[SessionPage] Track skipped:", data);
       toast.success(
         "Track skipped",
@@ -140,7 +143,7 @@ export default function SessionPage({
     });
 
     // Listen for DJ assignment
-    socket.on("dj_assigned", (userId) => {
+    socket.on(WS_EVENTS.DJ_ASSIGNED, (userId) => {
       console.log("[SessionPage] DJ assigned:", userId);
       const participant = session?.participants.find(p => p.userId === userId);
       if (participant) {
@@ -149,7 +152,7 @@ export default function SessionPage({
       fetchSession();
     });
 
-    socket.on("dj_removed", (userId) => {
+    socket.on(WS_EVENTS.DJ_REMOVED, (userId) => {
       console.log("[SessionPage] DJ removed:", userId);
       const participant = session?.participants.find(p => p.userId === userId);
       if (participant) {
@@ -158,16 +161,24 @@ export default function SessionPage({
       fetchSession();
     });
 
+    // Listen for settings updates
+    socket.on(WS_EVENTS.SESSION_SETTINGS_UPDATED, (settings) => {
+      console.log("[SessionPage] Settings updated:", settings);
+      toast.success("Session settings updated");
+      fetchSession();
+    });
+
     // Cleanup listeners on unmount
     return () => {
-      socket.off("participant_joined");
-      socket.off("participant_left");
-      socket.off("queue_updated");
-      socket.off("playback_state_changed");
-      socket.off("vote_updated");
-      socket.off("track_skipped");
-      socket.off("dj_assigned");
-      socket.off("dj_removed");
+      socket.off(WS_EVENTS.PARTICIPANT_JOINED);
+      socket.off(WS_EVENTS.PARTICIPANT_LEFT);
+      socket.off(WS_EVENTS.QUEUE_UPDATED);
+      socket.off(WS_EVENTS.PLAYBACK_STATE_CHANGED);
+      socket.off(WS_EVENTS.VOTE_UPDATED);
+      socket.off(WS_EVENTS.TRACK_SKIPPED);
+      socket.off(WS_EVENTS.DJ_ASSIGNED);
+      socket.off(WS_EVENTS.DJ_REMOVED);
+      socket.off(WS_EVENTS.SESSION_SETTINGS_UPDATED);
     };
   }, [socket, isJoined, session, toast]);
 
