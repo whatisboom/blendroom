@@ -6,7 +6,6 @@ import { Participant, TasteProfile } from './user';
 import { QueueItem } from './queue';
 import { VoteState } from './vote';
 import { PlaybackMode } from './spotify';
-import { AudioFeatures } from './spotify';
 
 export interface SessionSettings {
   voteToSkip: boolean;
@@ -15,7 +14,6 @@ export interface SessionSettings {
 }
 
 export interface SessionProfile {
-  avgAudioFeatures: AudioFeatures;
   commonArtists: string[];         // Artist IDs
   commonGenres: string[];
   tasteProfiles: TasteProfile[];

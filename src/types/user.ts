@@ -20,7 +20,6 @@ export interface TasteProfile {
   topTracks: string[];           // Track IDs
   topArtists: SpotifyArtist[];
   topGenres: string[];
-  avgAudioFeatures: AudioFeatures;
   lastUpdated: number;           // Timestamp
 }
 

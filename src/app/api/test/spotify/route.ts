@@ -72,6 +72,42 @@ export async function GET(req: NextRequest) {
         };
       }
 
+      // Test with medium_term (what session creation uses)
+      try {
+        const topTracksMedium = await spotifyService.getUserTopTracks(50, "medium_term");
+        result.topTracksMediumSuccess = true;
+        result.topTracksMediumCount = topTracksMedium.length;
+        result.topTracksMediumNames = topTracksMedium.map(t => t.name);
+      } catch (error) {
+        result.topTracksMediumSuccess = false;
+        result.topTracksMediumError = {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown',
+          // @ts-expect-error - accessing error properties
+          statusCode: error?.statusCode,
+          // @ts-expect-error - accessing error properties
+          body: error?.body,
+        };
+      }
+
+      // Test with 50 items short_term
+      try {
+        const topTracks50 = await spotifyService.getUserTopTracks(50, "short_term");
+        result.topTracks50Success = true;
+        result.topTracks50Count = topTracks50.length;
+        result.topTracks50Names = topTracks50.map(t => t.name);
+      } catch (error) {
+        result.topTracks50Success = false;
+        result.topTracks50Error = {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown',
+          // @ts-expect-error - accessing error properties
+          statusCode: error?.statusCode,
+          // @ts-expect-error - accessing error properties
+          body: error?.body,
+        };
+      }
+
       // Try to get playback state
       try {
         const playbackState = await spotifyService.getPlaybackState();
@@ -83,6 +119,25 @@ export async function GET(req: NextRequest) {
           message: error instanceof Error ? error.message : String(error),
           // @ts-expect-error - accessing error properties
           statusCode: error?.statusCode,
+        };
+      }
+
+      // Test audio features (what session creation uses)
+      try {
+        const topTracksForAudio = await spotifyService.getUserTopTracks(50, "medium_term");
+        const trackIds = topTracksForAudio.map(t => t.id);
+        const audioFeatures = await spotifyService.getAudioFeatures(trackIds);
+        result.audioFeaturesSuccess = true;
+        result.audioFeaturesCount = audioFeatures.length;
+      } catch (error) {
+        result.audioFeaturesSuccess = false;
+        result.audioFeaturesError = {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : 'Unknown',
+          // @ts-expect-error - accessing error properties
+          statusCode: error?.statusCode,
+          // @ts-expect-error - accessing error properties
+          body: error?.body,
         };
       }
     }

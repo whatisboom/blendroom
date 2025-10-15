@@ -41,15 +41,27 @@ export class SpotifyService {
     const chunks = this.chunkArray(trackIds, 100);
     const allFeatures: AudioFeatures[] = [];
 
+    console.log(`Getting audio features for ${trackIds.length} tracks in ${chunks.length} chunks`);
+
     for (const chunk of chunks) {
-      const features = await spotifyRateLimiter.execute(async () => {
-        const client = createSpotifyClient(this.accessToken);
-        const response = await client.getAudioFeaturesForTracks(chunk);
-        return response.body.audio_features.filter((f): f is AudioFeatures => f !== null);
-      });
-      allFeatures.push(...features);
+      try {
+        const features = await spotifyRateLimiter.execute(async () => {
+          const client = createSpotifyClient(this.accessToken);
+          console.log(`Fetching audio features for chunk of ${chunk.length} tracks`);
+          const response = await client.getAudioFeaturesForTracks(chunk);
+          console.log(`Successfully fetched audio features for ${chunk.length} tracks`);
+          return response.body.audio_features.filter((f): f is AudioFeatures => f !== null);
+        });
+        allFeatures.push(...features);
+      } catch (error) {
+        console.error(`Error fetching audio features for chunk:`, error);
+        // Log track IDs for debugging
+        console.error(`Track IDs that failed:`, chunk);
+        throw error;
+      }
     }
 
+    console.log(`Successfully retrieved ${allFeatures.length} audio features`);
     return allFeatures;
   }
 

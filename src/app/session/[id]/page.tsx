@@ -143,8 +143,35 @@ export default function SessionPage({
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Player */}
+        <div className="card mb-6">
+          <h2 className="text-xl font-semibold mb-4">Now Playing</h2>
+          <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
+            <p className="mb-4">Player controls coming soon</p>
+            <div className="text-sm">
+              <div>Playback Mode: {session.settings.playbackMode}</div>
+              <div>Vote to Skip: {session.settings.voteToSkip ? "On" : "Off"}</div>
+              {session.settings.voteToSkip && (
+                <div>Skip Threshold: {session.settings.skipThreshold} votes</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Queue and Participants */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Queue */}
+          <div className="card lg:col-span-2">
+            <h2 className="text-xl font-semibold mb-4">Queue</h2>
+            <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
+              {session.queue.length === 0 ? (
+                <p>No tracks in queue yet</p>
+              ) : (
+                <p>{session.queue.length} tracks in queue</p>
+              )}
+            </div>
+          </div>
+
           {/* Participants */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">
@@ -166,33 +193,6 @@ export default function SessionPage({
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Player (Placeholder) */}
-          <div className="card lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Now Playing</h2>
-            <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
-              <p className="mb-4">Player controls coming soon</p>
-              <div className="text-sm">
-                <div>Playback Mode: {session.settings.playbackMode}</div>
-                <div>Vote to Skip: {session.settings.voteToSkip ? "On" : "Off"}</div>
-                {session.settings.voteToSkip && (
-                  <div>Skip Threshold: {session.settings.skipThreshold} votes</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Queue (Placeholder) */}
-        <div className="card mt-6">
-          <h2 className="text-xl font-semibold mb-4">Queue</h2>
-          <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
-            {session.queue.length === 0 ? (
-              <p>No tracks in queue yet</p>
-            ) : (
-              <p>{session.queue.length} tracks in queue</p>
-            )}
           </div>
         </div>
       </div>

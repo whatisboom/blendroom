@@ -1,6 +1,5 @@
 import { SpotifyService } from "./spotify.service";
-import { calculateAverageFeatures } from "../algorithm/audio-features";
-import type { TasteProfile, AudioFeatures, SpotifyArtist, Participant } from "@/types";
+import type { TasteProfile, SpotifyArtist, Participant } from "@/types";
 
 /**
  * Service for analyzing user music taste based on Spotify data
@@ -21,21 +20,20 @@ export class TasteAnalysisService {
     // Check cache
     const cached = this.cache.get(userId);
     if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      console.log(`Using cached taste profile for user ${userId}`);
       return cached.profile;
     }
 
+    console.log(`Fetching taste profile for user ${userId}...`);
     // Fetch user's top tracks and artists
     const [topTracks, topArtists] = await Promise.all([
       this.spotifyService.getUserTopTracks(50, "medium_term"),
       this.spotifyService.getUserTopArtists(50, "medium_term"),
     ]);
+    console.log(`Successfully fetched ${topTracks.length} tracks and ${topArtists.length} artists for user ${userId}`);
 
-    // Get audio features for top tracks
+    // Extract track IDs
     const trackIds = topTracks.map((t) => t.id);
-    const audioFeatures = await this.spotifyService.getAudioFeatures(trackIds);
-
-    // Calculate average audio features
-    const avgAudioFeatures = calculateAverageFeatures(audioFeatures);
 
     // Extract top genres from artists
     const topGenres = this.extractTopGenres(topArtists);
@@ -45,7 +43,6 @@ export class TasteAnalysisService {
       topTracks: trackIds,
       topArtists,
       topGenres,
-      avgAudioFeatures,
       lastUpdated: Date.now(),
     };
 
@@ -119,27 +116,27 @@ export class TasteAnalysisService {
    * Generate a session profile by aggregating participant taste profiles
    */
   async generateSessionProfile(participants: Participant[]): Promise<{
-    avgAudioFeatures: AudioFeatures;
     commonArtists: string[];
     commonGenres: string[];
     tasteProfiles: TasteProfile[];
   }> {
+    console.log(`Generating session profile for ${participants.length} participants`);
+
     // Get taste profiles for all participants
+    console.log(`Fetching taste profiles...`);
     const tasteProfiles = await Promise.all(
       participants.map((p) => this.analyzeUserTaste(p.userId))
     );
-
-    // Calculate average audio features
-    const allFeatures = tasteProfiles.map((p) => p.avgAudioFeatures);
-    const avgAudioFeatures = calculateAverageFeatures(allFeatures);
+    console.log(`Successfully fetched ${tasteProfiles.length} taste profiles`);
 
     // Find common artists and genres
+    console.log(`Finding common artists and genres...`);
     const commonArtistObjects = this.findCommonArtists(tasteProfiles);
     const commonArtists = commonArtistObjects.map((a) => a.id);
     const commonGenres = this.findCommonGenres(tasteProfiles);
+    console.log(`Found ${commonArtists.length} common artists and ${commonGenres.length} common genres`);
 
     return {
-      avgAudioFeatures,
       commonArtists,
       commonGenres,
       tasteProfiles,

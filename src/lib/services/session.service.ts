@@ -314,6 +314,7 @@ export class SessionService {
     }
 
     try {
+      console.log(`Updating profile for session ${sessionId} with ${session.participants.length} participants`);
       const profile = await this.tasteAnalysisService.generateSessionProfile(
         session.participants
       );
@@ -322,8 +323,20 @@ export class SessionService {
       session.updatedAt = Date.now();
 
       await this.store.set(sessionId, session);
+      console.log(`Successfully updated profile for session ${sessionId}`);
     } catch (error) {
       console.error("Failed to update session profile:", error);
+      // Log more details about the error
+      if (error && typeof error === 'object') {
+        console.error("Error details:", {
+          // @ts-expect-error - accessing error properties
+          statusCode: error.statusCode,
+          // @ts-expect-error - accessing error properties
+          message: error.message,
+          // @ts-expect-error - accessing error properties
+          body: error.body,
+        });
+      }
       throw error;
     }
   }
