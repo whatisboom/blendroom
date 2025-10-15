@@ -462,6 +462,11 @@ export default function SessionPage({
     fetchSession();
   };
 
+  const handleSettingsUpdated = () => {
+    // Refresh session (settings will also update via WebSocket)
+    fetchSession();
+  };
+
   // Check if current user is a DJ
   const isUserDJ = userSession?.user?.id && session?.participants.find(
     (p) => p.userId === userSession.user.id
@@ -518,9 +523,19 @@ export default function SessionPage({
                 </button>
               </div>
             </div>
-            <button onClick={handleLeaveSession} className="btn-secondary">
-              Leave Session
-            </button>
+            <div className="flex items-center gap-3">
+              {isUserHost && (
+                <button
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="text-sm px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                >
+                  Settings
+                </button>
+              )}
+              <button onClick={handleLeaveSession} className="btn-secondary">
+                Leave Session
+              </button>
+            </div>
           </div>
         </div>
 
@@ -691,6 +706,17 @@ export default function SessionPage({
           onClose={() => setIsAddTrackModalOpen(false)}
           sessionId={session.id}
           onTrackAdded={handleTrackAdded}
+        />
+      )}
+
+      {/* Session Settings Modal */}
+      {session && (
+        <SessionSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          sessionId={session.id}
+          currentSettings={session.settings}
+          onSettingsUpdated={handleSettingsUpdated}
         />
       )}
     </main>
