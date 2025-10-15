@@ -5,7 +5,13 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "mcp__context7__get-library-docs",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:authjs.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -v http://127.0.0.1:3000/)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:next-auth.js.org)",
+      "Bash(npm run dev)"
     ],
     "deny": [],
     "ask": []

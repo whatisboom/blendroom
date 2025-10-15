@@ -1,0 +1,115 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { getStore } from "@/lib/session";
+import { SessionService } from "@/lib/services/session.service";
+import { SpotifyService } from "@/lib/services/spotify.service";
+import { z } from "zod";
+import type { QueueItem } from "@/types";
+
+const addTrackSchema = z.object({
+  trackId: z.string().min(1),
+});
+
+/**
+ * POST /api/queue/[sessionId]/add
+ * Add a track to the queue (DJ only)
+ */
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session || !session.accessToken) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { sessionId } = await params;
+
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = addTrackSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid request body", details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { trackId } = validation.data;
+
+    // Get session
+    const store = getStore();
+    const sessionService = new SessionService(store, session.accessToken);
+    const targetSession = await sessionService.getSession(sessionId);
+
+    if (!targetSession) {
+      return NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is DJ
+    if (!sessionService.isDJ(targetSession, session.user.id)) {
+      return NextResponse.json(
+        { error: "Only DJs can add tracks" },
+        { status: 403 }
+      );
+    }
+
+    // Fetch track details from Spotify
+    const spotifyService = new SpotifyService(session.accessToken);
+    const audioFeatures = await spotifyService.getAudioFeatures([trackId]);
+
+    if (audioFeatures.length === 0) {
+      return NextResponse.json(
+        { error: "Track not found" },
+        { status: 404 }
+      );
+    }
+
+    // Create queue item
+    const queueItem: QueueItem = {
+      track: {
+        id: trackId,
+        audioFeatures: audioFeatures[0],
+      },
+      position: targetSession.queue.length,
+      addedBy: session.user.id,
+      addedAt: Date.now(),
+      isStable: false,
+    };
+
+    // Add to queue
+    targetSession.queue.push(queueItem);
+    targetSession.updatedAt = Date.now();
+
+    await store.set(sessionId, targetSession);
+
+    return NextResponse.json({
+      queue: targetSession.queue,
+      added: queueItem,
+    });
+  } catch (error) {
+    console.error("Error adding track to queue:", error);
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
