@@ -1,5 +1,4 @@
-import type { Track, AudioFeatures, TasteProfile, LikeVote } from "@/types";
-import { calculateFeatureDistance } from "./audio-features";
+import type { Track, TasteProfile, LikeVote } from "@/types";
 
 interface ScoredTrack {
   track: Track;
@@ -9,58 +8,51 @@ interface ScoredTrack {
 
 /**
  * Score tracks based on how well they match the session profile
+ * Uses artist/track/genre matching instead of audio features
  */
 export function scoreTracks(
   candidates: Track[],
-  sessionAvgFeatures: AudioFeatures,
   tasteProfiles: TasteProfile[],
+  commonGenres: string[],
   likedVotes: LikeVote[],
   recentTracks: Track[]
 ): ScoredTrack[] {
-  // Calculate liked features if any
-  const likedFeatures = likedVotes.length > 0
-    ? calculateLikedProfile(likedVotes, candidates)
-    : null;
+  // Calculate liked artists if any
+  const likedArtists = likedVotes.length > 0
+    ? extractLikedArtists(likedVotes, candidates)
+    : new Set<string>();
 
   return candidates.map((track) => {
     let score = 0;
     const reasons: string[] = [];
 
-    if (!track.audioFeatures) {
-      return { track, score: -1, reasons: ["Missing audio features"] };
-    }
-
-    // 1. Base score: similarity to session average (40% weight)
-    const featureDistance = calculateFeatureDistance(
-      track.audioFeatures,
-      sessionAvgFeatures
-    );
-    const featureScore = Math.max(0, 1 - featureDistance) * 0.4;
-    score += featureScore;
-    reasons.push(`Feature match: ${(featureScore * 100).toFixed(0)}%`);
-
-    // 2. Liked tracks influence (30% weight if likes exist)
-    if (likedFeatures) {
-      const likeDistance = calculateFeatureDistance(
-        track.audioFeatures,
-        likedFeatures
-      );
-      const likeScore = Math.max(0, 1 - likeDistance) * 0.3 * 2; // Double weight
-      score += likeScore;
-      reasons.push(`Like similarity: ${(likeScore * 100).toFixed(0)}%`);
-    }
-
-    // 3. Participant match: how many users would like this (20% weight)
+    // 1. Participant match: how many users would like this (50% weight)
     const participantMatchScore = calculateParticipantMatch(
       track,
       tasteProfiles
     );
-    score += participantMatchScore * 0.2;
+    score += participantMatchScore * 0.5;
     reasons.push(
       `User appeal: ${(participantMatchScore * 100).toFixed(0)}%`
     );
 
-    // 4. Diversity penalty: avoid same artist back-to-back (10% weight)
+    // 2. Genre match with session (30% weight)
+    const genreScore = calculateGenreMatch(track, tasteProfiles, commonGenres);
+    score += genreScore * 0.3;
+    reasons.push(`Genre match: ${(genreScore * 100).toFixed(0)}%`);
+
+    // 3. Liked tracks influence (20% weight if likes exist)
+    if (likedArtists.size > 0) {
+      const artistMatch = track.artists.some((artist) =>
+        likedArtists.has(artist.id)
+      );
+      if (artistMatch) {
+        score += 0.2;
+        reasons.push(`Liked artist: +20%`);
+      }
+    }
+
+    // 4. Diversity penalty: avoid same artist back-to-back
     const diversityPenalty = calculateDiversityPenalty(track, recentTracks);
     score -= diversityPenalty;
     if (diversityPenalty > 0) {
@@ -73,6 +65,7 @@ export function scoreTracks(
 
 /**
  * Calculate how many participants would likely enjoy this track
+ * Based on artist and track matches
  */
 function calculateParticipantMatch(
   track: Track,
@@ -83,7 +76,7 @@ function calculateParticipantMatch(
   let matches = 0;
 
   for (const profile of tasteProfiles) {
-    // Check if artist is in user's top artists
+    // Check if artist is in user's top artists (full match)
     const artistMatch = track.artists.some((artist) =>
       profile.topArtists.some((topArtist) => topArtist.id === artist.id)
     );
@@ -93,27 +86,71 @@ function calculateParticipantMatch(
       continue;
     }
 
-    // Check if track is in user's top tracks
+    // Check if track is in user's top tracks (full match)
     const trackMatch = profile.topTracks.includes(track.id);
     if (trackMatch) {
       matches++;
       continue;
     }
 
-    // Check if audio features are similar to user's average
-    if (track.audioFeatures) {
-      const distance = calculateFeatureDistance(
-        track.audioFeatures,
-        profile.avgAudioFeatures
-      );
-      if (distance < 0.5) {
-        // Within similarity threshold
-        matches += 0.5; // Partial match
-      }
+    // Check if genres overlap (partial match)
+    const trackGenres = extractTrackGenres(track, profile);
+    const genreOverlap = trackGenres.some((genre) =>
+      profile.topGenres.includes(genre)
+    );
+    if (genreOverlap) {
+      matches += 0.3; // Partial match for genre similarity
     }
   }
 
   return matches / tasteProfiles.length;
+}
+
+/**
+ * Extract genres for a track from artist data in profiles
+ */
+function extractTrackGenres(track: Track, profile: TasteProfile): string[] {
+  const genres = new Set<string>();
+
+  for (const artist of track.artists) {
+    const profileArtist = profile.topArtists.find((a) => a.id === artist.id);
+    if (profileArtist?.genres) {
+      profileArtist.genres.forEach((g) => genres.add(g));
+    }
+  }
+
+  return Array.from(genres);
+}
+
+/**
+ * Calculate genre match score for a track
+ */
+function calculateGenreMatch(
+  track: Track,
+  tasteProfiles: TasteProfile[],
+  commonGenres: string[]
+): number {
+  if (tasteProfiles.length === 0) return 0;
+
+  // Extract all genres from track's artists across all profiles
+  const trackGenres = new Set<string>();
+  for (const profile of tasteProfiles) {
+    const genres = extractTrackGenres(track, profile);
+    genres.forEach((g) => trackGenres.add(g));
+  }
+
+  if (trackGenres.size === 0) return 0;
+
+  // Count how many of the track's genres match common genres
+  let matches = 0;
+  for (const genre of trackGenres) {
+    if (commonGenres.includes(genre)) {
+      matches++;
+    }
+  }
+
+  // Score is the ratio of matching genres to total genres
+  return Math.min(1, matches / Math.max(1, commonGenres.length));
 }
 
 /**
@@ -149,71 +186,21 @@ function calculateDiversityPenalty(
 }
 
 /**
- * Calculate average features of liked tracks
+ * Extract artist IDs from liked tracks
  */
-function calculateLikedProfile(
+function extractLikedArtists(
   likedVotes: LikeVote[],
   candidates: Track[]
-): AudioFeatures | null {
+): Set<string> {
   const likedTrackIds = new Set(likedVotes.map((v) => v.trackId));
   const likedTracks = candidates.filter((t) => likedTrackIds.has(t.id));
 
-  if (likedTracks.length === 0) return null;
+  const artists = new Set<string>();
+  for (const track of likedTracks) {
+    track.artists.forEach((artist) => artists.add(artist.id));
+  }
 
-  const likedFeatures = likedTracks
-    .map((t) => t.audioFeatures)
-    .filter((f): f is AudioFeatures => f !== undefined);
-
-  if (likedFeatures.length === 0) return null;
-
-  // Calculate average
-  const sum = likedFeatures.reduce(
-    (acc, f) => ({
-      id: "",
-      danceability: acc.danceability + f.danceability,
-      energy: acc.energy + f.energy,
-      valence: acc.valence + f.valence,
-      tempo: acc.tempo + f.tempo,
-      acousticness: acc.acousticness + f.acousticness,
-      instrumentalness: acc.instrumentalness + f.instrumentalness,
-      speechiness: acc.speechiness + f.speechiness,
-      loudness: acc.loudness + f.loudness,
-      key: acc.key,
-      mode: acc.mode,
-      time_signature: acc.time_signature,
-    }),
-    {
-      id: "liked",
-      danceability: 0,
-      energy: 0,
-      valence: 0,
-      tempo: 0,
-      acousticness: 0,
-      instrumentalness: 0,
-      speechiness: 0,
-      loudness: 0,
-      key: 0,
-      mode: 0,
-      time_signature: 4,
-    }
-  );
-
-  const count = likedFeatures.length;
-
-  return {
-    id: "liked",
-    danceability: sum.danceability / count,
-    energy: sum.energy / count,
-    valence: sum.valence / count,
-    tempo: sum.tempo / count,
-    acousticness: sum.acousticness / count,
-    instrumentalness: sum.instrumentalness / count,
-    speechiness: sum.speechiness / count,
-    loudness: sum.loudness / count,
-    key: sum.key,
-    mode: sum.mode,
-    time_signature: sum.time_signature,
-  };
+  return artists;
 }
 
 /**

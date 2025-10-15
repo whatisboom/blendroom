@@ -1,9 +1,10 @@
 import { SpotifyService } from "./spotify.service";
 import { scoreTracks, sortByScore } from "../algorithm/scoring";
-import type { Session, Track, QueueItem, AudioFeatures, TasteProfile } from "@/types";
+import type { Session, Track, QueueItem, TasteProfile } from "@/types";
 
 /**
  * Service for generating music queues based on session taste profile
+ * Uses seed-based recommendations (artists, tracks, genres) instead of audio features
  */
 export class QueueGenerationService {
   private spotifyService: SpotifyService;
@@ -24,39 +25,36 @@ export class QueueGenerationService {
       throw new Error("Session profile not generated");
     }
 
-    const { avgAudioFeatures, commonArtists, tasteProfiles } = session.profile;
+    const { commonArtists, commonGenres, tasteProfiles } = session.profile;
 
     // 1. Get candidate tracks from Spotify recommendations
     const candidates = await this.getCandidateTracks(
-      avgAudioFeatures,
       commonArtists,
+      commonGenres,
       tasteProfiles,
-      targetSize * 5 // Get 5x more candidates for better selection
+      targetSize * 3 // Get 3x more candidates for better selection
     );
 
-    // 2. Fetch audio features for all candidates
-    const tracksWithFeatures = await this.enrichWithAudioFeatures(candidates);
-
-    // 3. Remove duplicates (already in queue or played recently)
+    // 2. Remove duplicates (already in queue or played recently)
     const existingTrackIds = new Set(session.queue.map((q) => q.track.id));
-    const newCandidates = tracksWithFeatures.filter(
+    const newCandidates = candidates.filter(
       (t) => !existingTrackIds.has(t.id)
     );
 
-    // 4. Score and rank tracks
+    // 3. Score and rank tracks
     const scored = scoreTracks(
       newCandidates,
-      avgAudioFeatures,
       tasteProfiles,
+      commonGenres,
       session.votes.like,
       session.queue.slice(-5).map((q) => q.track) // Last 5 tracks for diversity check
     );
 
-    // 5. Sort by score and take top N
+    // 4. Sort by score and take top N
     const sorted = sortByScore(scored);
     const topTracks = sorted.slice(0, targetSize).map((s) => s.track);
 
-    // 6. Convert to QueueItems
+    // 5. Convert to QueueItems
     const queueItems: QueueItem[] = topTracks.map((track, index) => ({
       track,
       position: session.queue.length + index,
@@ -69,25 +67,35 @@ export class QueueGenerationService {
   }
 
   /**
-   * Get candidate tracks from Spotify
+   * Get candidate tracks from Spotify using seed-based recommendations
+   * Strategy: 2 genres + 2 artists + 1 track (max 5 seeds)
    */
   private async getCandidateTracks(
-    targetFeatures: AudioFeatures,
     commonArtists: string[],
+    commonGenres: string[],
     tasteProfiles: TasteProfile[],
     count: number
   ): Promise<Track[]> {
+    // Select seed genres (prioritize common genres)
+    const seedGenres = commonGenres.slice(0, 2);
+
     // Select seed artists (mix of common and individual favorites)
     const seedArtists = this.selectSeedArtists(commonArtists, tasteProfiles);
 
-    // Select seed tracks from taste profiles
+    // Select seed tracks from taste profiles (for diversity)
     const seedTracks = this.selectSeedTracks(tasteProfiles);
 
-    // Get recommendations
+    console.log(`Generating queue with seeds:`, {
+      genres: seedGenres,
+      artists: seedArtists.slice(0, 2),
+      tracks: seedTracks.slice(0, 1),
+    });
+
+    // Get recommendations (2 genres + 2 artists + 1 track = 5 seeds max)
     const recommendations = await this.spotifyService.getRecommendations({
+      seedGenres,
       seedArtists: seedArtists.slice(0, 2),
-      seedTracks: seedTracks.slice(0, 3),
-      targetFeatures,
+      seedTracks: seedTracks.slice(0, 1),
       limit: count,
     });
 
@@ -146,22 +154,6 @@ export class QueueGenerationService {
     return seeds;
   }
 
-  /**
-   * Enrich tracks with audio features
-   */
-  private async enrichWithAudioFeatures(tracks: Track[]): Promise<Track[]> {
-    const trackIds = tracks.map((t) => t.id);
-    const audioFeatures = await this.spotifyService.getAudioFeatures(trackIds);
-
-    // Create a map for quick lookup
-    const featuresMap = new Map(audioFeatures.map((f) => [f.id, f]));
-
-    // Add audio features to tracks
-    return tracks.map((track) => ({
-      ...track,
-      audioFeatures: featuresMap.get(track.id),
-    }));
-  }
 
   /**
    * Merge new queue with stable tracks from existing queue
