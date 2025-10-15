@@ -137,6 +137,25 @@ export default function SessionPage({
       fetchSession();
     });
 
+    // Listen for DJ assignment
+    socket.on("dj_assigned", (userId) => {
+      console.log("[SessionPage] DJ assigned:", userId);
+      const participant = session?.participants.find(p => p.userId === userId);
+      if (participant) {
+        toast.success(`${participant.name} is now a DJ`);
+      }
+      fetchSession();
+    });
+
+    socket.on("dj_removed", (userId) => {
+      console.log("[SessionPage] DJ removed:", userId);
+      const participant = session?.participants.find(p => p.userId === userId);
+      if (participant) {
+        toast.info(`${participant.name} is no longer a DJ`);
+      }
+      fetchSession();
+    });
+
     // Cleanup listeners on unmount
     return () => {
       socket.off("participant_joined");
@@ -145,8 +164,10 @@ export default function SessionPage({
       socket.off("playback_state_changed");
       socket.off("vote_updated");
       socket.off("track_skipped");
+      socket.off("dj_assigned");
+      socket.off("dj_removed");
     };
-  }, [socket, isJoined]);
+  }, [socket, isJoined, session, toast]);
 
   // Poll playback state for progress updates (lightweight polling for progress bar)
   useEffect(() => {
@@ -395,10 +416,39 @@ export default function SessionPage({
     console.log("Device connected:", deviceId);
   };
 
+  const handleToggleDJ = async (userId: string, currentlyDJ: boolean) => {
+    if (!session) return;
+
+    try {
+      const response = await fetch(`/api/session/${session.id}/djs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          action: currentlyDJ ? "remove" : "add",
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to update DJ status");
+      }
+
+      // Session will be updated via WebSocket
+    } catch (err) {
+      console.error("Failed to update DJ status:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to update DJ status";
+      toast.error("Error updating DJ", errorMessage);
+    }
+  };
+
   // Check if current user is a DJ
   const isUserDJ = userSession?.user?.id && session?.participants.find(
     (p) => p.userId === userSession.user.id
   )?.isDJ;
+
+  // Check if current user is the host
+  const isUserHost = userSession?.user?.id === session?.hostId;
 
   if (isLoading) {
     return (
@@ -585,6 +635,20 @@ export default function SessionPage({
                       {participant.isDJ && "DJ"}
                     </div>
                   </div>
+
+                  {/* DJ Management Button (Host Only) */}
+                  {isUserHost && !participant.isHost && (
+                    <button
+                      onClick={() => handleToggleDJ(participant.userId, participant.isDJ)}
+                      className={`text-xs px-3 py-1 rounded transition-colors ${
+                        participant.isDJ
+                          ? "bg-red-900/50 text-red-300 hover:bg-red-900"
+                          : "bg-green-900/50 text-green-300 hover:bg-green-900"
+                      }`}
+                    >
+                      {participant.isDJ ? "Remove DJ" : "Make DJ"}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

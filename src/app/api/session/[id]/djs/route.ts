@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 
 const manageDJSchema = z.object({
@@ -54,6 +55,13 @@ export async function POST(
       userId,
       action
     );
+
+    // Broadcast DJ change event
+    if (action === "add") {
+      broadcastToSession(id, "dj_assigned", userId);
+    } else {
+      broadcastToSession(id, "dj_removed", userId);
+    }
 
     return NextResponse.json({
       session: {
