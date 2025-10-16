@@ -535,7 +535,7 @@ Trade-offs accepted:
 141. ✅ Show track info (title, artist, duration, album art)
 142. ✅ Real-time queue updates via WebSocket
 143. ✅ Click-to-play from queue (DJ only)
-144. Add reorder drag handles (DJ only) - pending implementation
+144. ✅ Add reorder drag handles (DJ only) - drag-and-drop with @dnd-kit
 145. ✅ Add "Add Track" button (DJ only) - opens AddTrackModal
 146. Show who added each manual track - pending implementation
 
@@ -968,6 +968,7 @@ When scaling becomes necessary:
 - **Session Settings modal** (host can configure vote-to-skip, threshold, playback mode)
 - **WebSocket event constants** for type safety and maintainability
 - **Reusable Modal component** for all modal dialogs
+- **Drag-and-drop queue reordering** with stable track protection (DJ feature)
 
 ### ✅ API Routes - COMPLETED
 **Session Management**:
@@ -1034,10 +1035,11 @@ When scaling becomes necessary:
 ### 2. Optional Enhancements
 
 ## Future Enhancements (Phase 2)
-- Drag-and-drop queue reordering (DJ feature)
 - Display who added each manual track in queue
 - Session analytics and history
 - Advanced algorithm tuning (genre balancing, energy pacing)
 - Web Playback SDK integration for in-browser playback
 - Session customization (mood, explicit filter, era preferences)
 - Advanced animations and visualizations
+- UI/UX polish (loading skeletons, error boundaries, accessibility)
+- Docker deployment and production setup
