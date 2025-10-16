@@ -25,7 +25,6 @@ export function DeviceSelector({ sessionId, onDeviceConnected }: DeviceSelectorP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          playbackMode: "device",
         }),
       });
 
@@ -58,7 +57,6 @@ export function DeviceSelector({ sessionId, onDeviceConnected }: DeviceSelectorP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          playbackMode: "device",
           deviceId,
         }),
       });

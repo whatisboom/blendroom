@@ -8,14 +8,14 @@ import { z } from "zod";
 
 const initSchema = z.object({
   sessionId: z.string().min(1),
-  playbackMode: z.enum(["device", "web"]),
-  deviceId: z.string().optional(),
+  deviceId: z.string().min(1).optional(),
 });
 
 /**
  * POST /api/playback/init
  * Initialize playback for a session (host/DJ only)
- * Sets up device or Web Playback SDK for the session
+ * - If deviceId is provided: sets the active device for the session
+ * - If deviceId is not provided: returns list of available devices
  */
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { sessionId, playbackMode, deviceId } = validation.data;
+    const { sessionId, deviceId } = validation.data;
 
     // Get session
     const store = getStore();
@@ -63,70 +63,52 @@ export async function POST(req: NextRequest) {
 
     const spotifyService = new SpotifyService(session.accessToken);
 
-    // Handle device mode
-    if (playbackMode === "device") {
-      // Get available devices
-      const devices = await spotifyService.getDevices();
+    // Get available devices
+    const devices = await spotifyService.getDevices();
 
-      if (devices.length === 0) {
-        return NextResponse.json(
-          { error: "No active Spotify devices found. Please open Spotify on a device first." },
-          { status: 400 }
-        );
-      }
+    if (devices.length === 0) {
+      return NextResponse.json(
+        { error: "No active Spotify devices found. Please open Spotify on a device first." },
+        { status: 400 }
+      );
+    }
 
-      // Use provided deviceId or the first active device
-      const selectedDevice = deviceId
-        ? devices.find((d) => d.id === deviceId)
-        : devices.find((d) => d.is_active) || devices[0];
-
-      if (!selectedDevice) {
-        return NextResponse.json(
-          { error: "Selected device not found" },
-          { status: 404 }
-        );
-      }
-
-      // Update session with active device
-      targetSession.activeDeviceId = selectedDevice.id;
-      targetSession.activeDeviceName = selectedDevice.name;
-      targetSession.activeDeviceType = selectedDevice.type;
-      targetSession.settings.playbackMode = "device";
-      await store.set(sessionId, targetSession);
-
+    // If no deviceId provided, return list of available devices
+    if (!deviceId) {
       return NextResponse.json({
-        success: true,
-        playbackMode: "device",
-        device: {
-          id: selectedDevice.id,
-          name: selectedDevice.name,
-          type: selectedDevice.type,
-        },
         availableDevices: devices.map((d) => ({
           id: d.id,
           name: d.name,
           type: d.type,
-          isActive: d.is_active,
+          is_active: d.is_active,
         })),
       });
     }
 
-    // Handle web mode - return token for Web Playback SDK
-    if (playbackMode === "web") {
-      targetSession.settings.playbackMode = "web";
-      await store.set(sessionId, targetSession);
+    // Find the selected device
+    const selectedDevice = devices.find((d) => d.id === deviceId);
 
-      return NextResponse.json({
-        success: true,
-        playbackMode: "web",
-        accessToken: session.accessToken, // Frontend needs this for Web Playback SDK
-      });
+    if (!selectedDevice) {
+      return NextResponse.json(
+        { error: "Selected device not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(
-      { error: "Invalid playback mode" },
-      { status: 400 }
-    );
+    // Update session with active device
+    targetSession.activeDeviceId = selectedDevice.id;
+    targetSession.activeDeviceName = selectedDevice.name;
+    targetSession.activeDeviceType = selectedDevice.type;
+    await store.set(sessionId, targetSession);
+
+    return NextResponse.json({
+      success: true,
+      device: {
+        id: selectedDevice.id,
+        name: selectedDevice.name,
+        type: selectedDevice.type,
+      },
+    });
   } catch (error) {
     console.error("Error initializing playback:", error);
 

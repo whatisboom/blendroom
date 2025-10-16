@@ -10,7 +10,7 @@ import { SessionSettingsModal } from "@/components/session/SessionSettingsModal"
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
 import { WS_EVENTS } from "@/lib/websocket/events";
-import type { SpotifyTrack, PlaybackMode } from "@/types";
+import type { SpotifyTrack } from "@/types";
 
 interface QueueItem {
   track: {
@@ -43,7 +43,6 @@ interface Session {
   settings: {
     voteToSkip: boolean;
     skipThreshold: number;
-    playbackMode: string;
   };
   queue: QueueItem[];
   activeDeviceId?: string;
@@ -551,8 +550,8 @@ export default function SessionPage({
         <div className="card mb-6">
           <h2 className="text-xl font-semibold mb-4">Now Playing</h2>
           <div className="space-y-4">
-            {/* Device Connection (for device mode) */}
-            {session.settings.playbackMode === "device" && isUserDJ && !isDeviceConnected ? (
+            {/* Device Selection (DJs only, until device is connected) */}
+            {isUserDJ && !isDeviceConnected ? (
               <DeviceSelector
                 sessionId={session.id}
                 onDeviceConnected={handleDeviceConnected}
@@ -575,7 +574,6 @@ export default function SessionPage({
                 <PlayerControls
                   sessionId={session.id}
                   isPlaying={isPlaying}
-                  playbackMode={session.settings.playbackMode as PlaybackMode}
                   isDJ={isUserDJ}
                   deviceName={session.activeDeviceName}
                   deviceType={session.activeDeviceType}

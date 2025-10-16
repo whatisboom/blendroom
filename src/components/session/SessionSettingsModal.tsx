@@ -26,7 +26,6 @@ export function SessionSettingsModal({
 }: SessionSettingsModalProps) {
   const [voteToSkip, setVoteToSkip] = useState(currentSettings.voteToSkip);
   const [skipThreshold, setSkipThreshold] = useState(currentSettings.skipThreshold);
-  const [playbackMode, setPlaybackMode] = useState(currentSettings.playbackMode);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +40,6 @@ export function SessionSettingsModal({
         body: JSON.stringify({
           voteToSkip,
           skipThreshold,
-          playbackMode,
         }),
       });
 
@@ -63,8 +61,7 @@ export function SessionSettingsModal({
 
   const hasChanges =
     voteToSkip !== currentSettings.voteToSkip ||
-    skipThreshold !== currentSettings.skipThreshold ||
-    playbackMode !== currentSettings.playbackMode;
+    skipThreshold !== currentSettings.skipThreshold;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Session Settings" size="md">
@@ -122,44 +119,6 @@ export function SessionSettingsModal({
             </label>
           </div>
         )}
-
-        {/* Playback Mode */}
-        <div>
-          <label className="block">
-            <div className="font-medium mb-2">Playback Mode</div>
-            <div className="text-sm text-gray-400 mb-3">
-              Choose how music is played
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setPlaybackMode("device")}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  playbackMode === "device"
-                    ? "border-spotify-green bg-green-900/20 text-white"
-                    : "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600"
-                }`}
-              >
-                <div className="font-semibold mb-1">Device</div>
-                <div className="text-xs">
-                  Play on your active Spotify device
-                </div>
-              </button>
-              <button
-                onClick={() => setPlaybackMode("web")}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  playbackMode === "web"
-                    ? "border-spotify-green bg-green-900/20 text-white"
-                    : "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600"
-                }`}
-              >
-                <div className="font-semibold mb-1">Web</div>
-                <div className="text-xs">
-                  Play in browser (Web Playback SDK)
-                </div>
-              </button>
-            </div>
-          </label>
-        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">

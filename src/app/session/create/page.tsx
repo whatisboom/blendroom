@@ -12,7 +12,6 @@ export default function CreateSessionPage() {
   const [settings, setSettings] = useState({
     voteToSkip: true,
     skipThreshold: 2,
-    playbackMode: "device" as const,
   });
 
   const handleCreateSession = async () => {
@@ -142,45 +141,6 @@ export default function CreateSessionPage() {
                   />
                 </div>
               )}
-
-              {/* Playback Mode */}
-              <div>
-                <label className="text-sm font-medium block mb-2">
-                  Playback Mode
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() =>
-                      setSettings({ ...settings, playbackMode: "device" })
-                    }
-                    className={`p-3 rounded-lg border transition-colors ${
-                      settings.playbackMode === "device"
-                        ? "border-green-500 bg-green-500/10"
-                        : "border-gray-700 hover:border-gray-600"
-                    }`}
-                  >
-                    <div className="font-medium text-sm">Device</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Play on your Spotify app
-                    </div>
-                  </button>
-                  <button
-                    onClick={() =>
-                      setSettings({ ...settings, playbackMode: "web" })
-                    }
-                    className={`p-3 rounded-lg border transition-colors ${
-                      settings.playbackMode === "web"
-                        ? "border-green-500 bg-green-500/10"
-                        : "border-gray-700 hover:border-gray-600"
-                    }`}
-                  >
-                    <div className="font-medium text-sm">Web Player</div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Play in browser
-                    </div>
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Create Button */}

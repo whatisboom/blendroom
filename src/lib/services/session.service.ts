@@ -51,7 +51,6 @@ export class SessionService {
     const defaultSettings: SessionSettings = {
       voteToSkip: true,
       skipThreshold: Math.ceil(1 / 2), // 50% of participants
-      playbackMode: "device",
       ...options?.settings,
     };
 

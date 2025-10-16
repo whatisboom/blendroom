@@ -10,7 +10,6 @@ const createSessionSchema = z.object({
   settings: z.object({
     voteToSkip: z.boolean().optional(),
     skipThreshold: z.number().int().min(1).optional(),
-    playbackMode: z.enum(["device", "web"]).optional(),
   }).optional(),
 });
 

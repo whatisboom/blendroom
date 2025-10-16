@@ -4,12 +4,12 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { WS_EVENTS } from "@/lib/websocket/events";
 import { z } from "zod";
 
 const updateSettingsSchema = z.object({
   voteToSkip: z.boolean().optional(),
   skipThreshold: z.number().int().min(1).optional(),
-  playbackMode: z.enum(["device", "web"]).optional(),
 });
 
 /**

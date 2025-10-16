@@ -87,5 +87,3 @@ export interface PlaybackState {
   shuffle_state: boolean;
   repeat_state: 'off' | 'track' | 'context';
 }
-
-export type PlaybackMode = 'web' | 'device';

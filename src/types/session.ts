@@ -5,12 +5,10 @@
 import { Participant, TasteProfile } from './user';
 import { QueueItem } from './queue';
 import { VoteState } from './vote';
-import { PlaybackMode } from './spotify';
 
 export interface SessionSettings {
   voteToSkip: boolean;
   skipThreshold: number;           // Number of votes needed
-  playbackMode: PlaybackMode;
 }
 
 export interface SessionProfile {
