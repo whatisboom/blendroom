@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 
 const reorderQueueSchema = z.object({
@@ -91,6 +92,9 @@ export async function PUT(
     targetSession.updatedAt = Date.now();
 
     await store.set(sessionId, targetSession);
+
+    // Broadcast queue update to all session participants
+    broadcastToSession(sessionId, "queue_updated", targetSession.queue);
 
     return NextResponse.json({ queue: targetSession.queue });
   } catch (error) {

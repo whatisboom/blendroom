@@ -3,6 +3,8 @@ import { SessionStore } from "../session/store.interface";
 import { generateSessionCode } from "../utils/session-code";
 import { nanoid } from "nanoid";
 import { TasteAnalysisService } from "./taste-analysis.service";
+import { QueueGenerationService } from "./queue-generation.service";
+import { MAX_QUEUE_SIZE } from "../constants";
 
 /**
  * Service for managing sessions
@@ -10,10 +12,14 @@ import { TasteAnalysisService } from "./taste-analysis.service";
 export class SessionService {
   private store: SessionStore;
   private tasteAnalysisService: TasteAnalysisService;
+  private queueGenerationService: QueueGenerationService;
+  private accessToken: string;
 
   constructor(store: SessionStore, accessToken: string) {
     this.store = store;
+    this.accessToken = accessToken;
     this.tasteAnalysisService = new TasteAnalysisService(accessToken);
+    this.queueGenerationService = new QueueGenerationService(accessToken);
   }
 
   /**
@@ -79,6 +85,25 @@ export class SessionService {
 
     // Generate initial profile
     await this.updateSessionProfile(sessionId);
+
+    // Generate initial queue
+    try {
+      const updatedSession = await this.store.get(sessionId);
+      if (updatedSession && updatedSession.profile) {
+        const initialQueue = await this.queueGenerationService.generateQueue(
+          updatedSession,
+          MAX_QUEUE_SIZE
+        );
+        updatedSession.queue = initialQueue;
+        updatedSession.updatedAt = Date.now();
+        await this.store.set(sessionId, updatedSession);
+        console.log(`Generated initial queue with ${initialQueue.length} tracks`);
+        return updatedSession;
+      }
+    } catch (error) {
+      console.error("Failed to generate initial queue:", error);
+      // Continue without queue - will be generated later
+    }
 
     return session;
   }

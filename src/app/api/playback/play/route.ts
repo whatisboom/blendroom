@@ -4,6 +4,8 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
+import { broadcastToSession } from "@/lib/websocket/server";
+import { PlaybackState } from "@/types/spotify";
 import { z } from "zod";
 
 const playSchema = z.object({
@@ -80,9 +82,46 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    // Remove the first track from queue and add to played tracks
+    const nowPlaying = targetSession.queue.shift();
+    if (nowPlaying) {
+      targetSession.playedTracks.push(nowPlaying.track.id);
+      targetSession.updatedAt = Date.now();
+      await store.set(sessionId, targetSession);
+    }
+
+    // Get current playback state and broadcast to all session participants
+    const playbackState = await spotifyService.getPlaybackState();
+    broadcastToSession(sessionId, "playback_state_changed", playbackState as PlaybackState);
+
+    // Also broadcast queue update since we removed the first track
+    broadcastToSession(sessionId, "queue_updated", targetSession.queue);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error starting playback:", error);
+
+    // Handle Spotify API errors
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      const spotifyError = error as { statusCode?: number; body?: { error?: { message?: string } } };
+
+      // 404 typically means no active device found
+      if (spotifyError.statusCode === 404) {
+        return NextResponse.json(
+          {
+            error: "No active Spotify device found. Please open Spotify on a device and start playing, then try again.",
+            details: "Make sure you have Spotify Premium and an active device."
+          },
+          { status: 404 }
+        );
+      }
+
+      const errorMessage = spotifyError.body?.error?.message || "Spotify API error";
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: spotifyError.statusCode || 400 }
+      );
+    }
 
     if (error instanceof Error) {
       return NextResponse.json(

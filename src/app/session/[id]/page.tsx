@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NowPlaying, ProgressBar, PlayerControls, DeviceSelector } from "@/components/player";
 import { AddTrackModal } from "@/components/queue/AddTrackModal";
+import { SortableQueueList } from "@/components/queue/SortableQueueList";
 import { SessionSettingsModal } from "@/components/session/SessionSettingsModal";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
@@ -467,10 +468,17 @@ export default function SessionPage({
     fetchSession();
   };
 
+  const handleQueueReordered = () => {
+    // Show success toast
+    toast.success("Queue reordered");
+    // Session will update via WebSocket
+  };
+
   // Check if current user is a DJ
-  const isUserDJ = userSession?.user?.id && session?.participants.find(
-    (p) => p.userId === userSession.user.id
-  )?.isDJ;
+  const isUserDJ = Boolean(
+    userSession?.user?.id &&
+      session?.participants.find((p) => p.userId === userSession.user.id)?.isDJ
+  );
 
   // Check if current user is the host
   const isUserHost = userSession?.user?.id === session?.hostId;
@@ -568,7 +576,7 @@ export default function SessionPage({
                   sessionId={session.id}
                   isPlaying={isPlaying}
                   playbackMode={session.settings.playbackMode as PlaybackMode}
-                  isDJ={isUserDJ ?? false}
+                  isDJ={isUserDJ}
                   deviceName={session.activeDeviceName}
                   deviceType={session.activeDeviceType}
                   onPlay={handlePlay}
@@ -601,62 +609,13 @@ export default function SessionPage({
                 <p>No tracks in queue yet</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {session.queue.map((item, index) => (
-                  <div
-                    key={`${item.track.id}-${item.position}`}
-                    onClick={() => isUserDJ && handlePlayFromQueue(index)}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                      item.isStable
-                        ? "bg-green-900/20 border border-green-700/30"
-                        : "bg-gray-800"
-                    } ${
-                      isUserDJ
-                        ? "cursor-pointer hover:bg-gray-700"
-                        : "cursor-default"
-                    }`}
-                  >
-                    {/* Position */}
-                    <div className="text-sm text-gray-400 w-6 text-center">
-                      {index + 1}
-                    </div>
-
-                    {/* Album art */}
-                    {item.track.album.images[0] && (
-                      <img
-                        src={item.track.album.images[0].url}
-                        alt={item.track.album.name}
-                        className="w-12 h-12 rounded"
-                      />
-                    )}
-
-                    {/* Track info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">
-                        {item.track.name}
-                      </div>
-                      <div className="text-sm text-gray-400 truncate">
-                        {item.track.artists.map((a) => a.name).join(", ")}
-                      </div>
-                    </div>
-
-                    {/* Duration */}
-                    <div className="text-sm text-gray-400">
-                      {Math.floor(item.track.duration_ms / 60000)}:
-                      {String(
-                        Math.floor((item.track.duration_ms % 60000) / 1000)
-                      ).padStart(2, "0")}
-                    </div>
-
-                    {/* Stable indicator */}
-                    {item.isStable && (
-                      <div className="text-xs text-green-400 font-medium">
-                        Stable
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <SortableQueueList
+                queue={session.queue}
+                sessionId={session.id}
+                isDJ={isUserDJ}
+                onPlayFromQueue={handlePlayFromQueue}
+                onReorderComplete={handleQueueReordered}
+              />
             )}
           </div>
 

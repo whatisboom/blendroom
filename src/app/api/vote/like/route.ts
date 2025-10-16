@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 
 const voteLikeSchema = z.object({
@@ -72,11 +73,18 @@ export async function POST(req: NextRequest) {
       targetSession.updatedAt = Date.now();
       await store.set(sessionId, targetSession);
 
+      const likeCount = targetSession.votes.like.filter((v) => v.trackId === trackId).length;
+
+      // Broadcast vote update
+      broadcastToSession(sessionId, "vote_updated", {
+        type: "like",
+        count: likeCount,
+      });
+
       return NextResponse.json({
         success: true,
         liked: false,
-        likeCount: targetSession.votes.like.filter((v) => v.trackId === trackId)
-          .length,
+        likeCount,
       });
     }
 
@@ -94,6 +102,12 @@ export async function POST(req: NextRequest) {
     const likeCount = targetSession.votes.like.filter(
       (v) => v.trackId === trackId
     ).length;
+
+    // Broadcast vote update
+    broadcastToSession(sessionId, "vote_updated", {
+      type: "like",
+      count: likeCount,
+    });
 
     return NextResponse.json({
       success: true,

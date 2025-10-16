@@ -11,7 +11,8 @@
       "Bash(curl -v http://127.0.0.1:3000/)",
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:next-auth.js.org)",
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "WebFetch(domain:developer.spotify.com)"
     ],
     "deny": [],
     "ask": []

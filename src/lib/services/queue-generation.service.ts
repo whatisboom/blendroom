@@ -1,20 +1,16 @@
 import { SpotifyService } from "./spotify.service";
-import { GenreValidationService } from "./genre-validation.service";
 import { scoreTracks, sortByScore } from "../algorithm/scoring";
 import type { Session, Track, QueueItem, TasteProfile } from "@/types";
-import type { SessionStore } from "@/lib/session-store/types";
 
 /**
  * Service for generating music queues based on session taste profile
- * Uses seed-based recommendations (artists, tracks, genres) instead of audio features
+ * Fetches top tracks from common artists and blends them using scoring algorithm
  */
 export class QueueGenerationService {
   private spotifyService: SpotifyService;
-  private genreValidation: GenreValidationService;
 
-  constructor(accessToken: string, store: SessionStore) {
+  constructor(accessToken: string) {
     this.spotifyService = new SpotifyService(accessToken);
-    this.genreValidation = new GenreValidationService(store, accessToken);
   }
 
   /**
@@ -83,16 +79,16 @@ export class QueueGenerationService {
     tasteProfiles: TasteProfile[],
     count: number
   ): Promise<Track[]> {
-    // Select seed artists (mix of common and individual favorites)
-    const seedArtists = this.selectSeedArtists(commonArtists, tasteProfiles);
+    // Select artists (mix of common and individual favorites)
+    const selectedArtists = this.selectArtists(commonArtists, tasteProfiles);
 
-    console.log(`Fetching tracks from ${seedArtists.length} artists`);
+    console.log(`Fetching tracks from ${selectedArtists.length} artists`);
 
     const allTracks: Track[] = [];
-    const tracksPerArtist = Math.ceil(count / Math.min(seedArtists.length, 5));
+    const tracksPerArtist = Math.ceil(count / Math.min(selectedArtists.length, 15));
 
-    // Get top tracks from each artist (limit to 5 artists)
-    for (const artistId of seedArtists.slice(0, 5)) {
+    // Get top tracks from each artist (limit to 15 artists for more variety)
+    for (const artistId of selectedArtists.slice(0, 15)) {
       try {
         const tracks = await this.spotifyService.searchTracksByArtist(
           artistId,
@@ -125,55 +121,36 @@ export class QueueGenerationService {
   }
 
   /**
-   * Select seed artists for recommendations
+   * Select artists to fetch tracks from
+   * Prioritizes common artists, then adds unique artists from each user
    */
-  private selectSeedArtists(
+  private selectArtists(
     commonArtists: string[],
     tasteProfiles: TasteProfile[]
   ): string[] {
-    const seeds: string[] = [];
+    const artists: string[] = [];
 
-    // Prioritize common artists
+    // Prioritize common artists (take up to 10 for single-user, scales down with more users)
     if (commonArtists.length > 0) {
-      seeds.push(...commonArtists.slice(0, 3));
+      artists.push(...commonArtists.slice(0, 10));
     }
 
     // Add unique artists from each user
-    if (seeds.length < 5) {
+    if (artists.length < 15) {
       for (const profile of tasteProfiles) {
         const uniqueArtists = profile.topArtists
           .map((a) => a.id)
-          .filter((id) => !seeds.includes(id));
+          .filter((id) => !artists.includes(id));
 
-        if (uniqueArtists.length > 0) {
-          seeds.push(uniqueArtists[0]);
-        }
+        // Add multiple unique artists per user
+        const artistsToAdd = uniqueArtists.slice(0, 3);
+        artists.push(...artistsToAdd);
 
-        if (seeds.length >= 5) break;
+        if (artists.length >= 15) break;
       }
     }
 
-    return seeds.slice(0, 5);
-  }
-
-  /**
-   * Select seed tracks for recommendations
-   */
-  private selectSeedTracks(tasteProfiles: TasteProfile[]): string[] {
-    const seeds: string[] = [];
-
-    // Get one track from each user
-    for (const profile of tasteProfiles) {
-      if (profile.topTracks.length > 0) {
-        // Pick a random track from top 10
-        const randomIndex = Math.floor(Math.random() * Math.min(10, profile.topTracks.length));
-        seeds.push(profile.topTracks[randomIndex]);
-      }
-
-      if (seeds.length >= 5) break;
-    }
-
-    return seeds;
+    return artists.slice(0, 15);
   }
 
 

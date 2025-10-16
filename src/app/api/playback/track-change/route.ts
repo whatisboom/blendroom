@@ -3,19 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
-import { SpotifyService } from "@/lib/services/spotify.service";
-import { broadcastToSession } from "@/lib/websocket/server";
-import { PlaybackState } from "@/types/spotify";
+import { checkAndRepopulateQueue } from "@/lib/queue-auto-repopulate";
 import { z } from "zod";
 
-const pauseSchema = z.object({
+const trackChangeSchema = z.object({
   sessionId: z.string().min(1),
-  deviceId: z.string().optional(),
+  trackId: z.string().min(1),
 });
 
 /**
- * POST /api/playback/pause
- * Pause playback (host/DJ only)
+ * POST /api/playback/track-change
+ * Handle natural track progression - remove played track from queue
  */
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     // Parse and validate request body
     const body = await req.json();
-    const validation = pauseSchema.safeParse(body);
+    const validation = trackChangeSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -39,7 +37,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { sessionId, deviceId } = validation.data;
+    const { sessionId, trackId } = validation.data;
 
     // Get session
     const store = getStore();
@@ -53,25 +51,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user is DJ
-    if (!sessionService.isDJ(targetSession, session.user.id)) {
-      return NextResponse.json(
-        { error: "Only DJs can control playback" },
-        { status: 403 }
-      );
+    // Find and remove the track from queue if it's the first one
+    if (targetSession.queue.length > 0 && targetSession.queue[0].track.id === trackId) {
+      const completedTrack = targetSession.queue.shift();
+      if (completedTrack) {
+        targetSession.playedTracks.push(completedTrack.track.id);
+        targetSession.updatedAt = Date.now();
+        await store.set(sessionId, targetSession);
+
+        // Check if queue needs repopulation
+        await checkAndRepopulateQueue(targetSession, store, session.accessToken);
+      }
     }
-
-    // Pause playback
-    const spotifyService = new SpotifyService(session.accessToken);
-    await spotifyService.pause(deviceId || targetSession.activeDeviceId);
-
-    // Get current playback state and broadcast to all session participants
-    const playbackState = await spotifyService.getPlaybackState();
-    broadcastToSession(sessionId, "playback_state_changed", playbackState as PlaybackState);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error pausing playback:", error);
+    console.error("Error handling track change:", error);
 
     if (error instanceof Error) {
       return NextResponse.json(

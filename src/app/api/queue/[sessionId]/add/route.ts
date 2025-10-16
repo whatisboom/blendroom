@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 import type { QueueItem } from "@/types";
 
@@ -92,6 +93,9 @@ export async function POST(
     targetSession.updatedAt = Date.now();
 
     await store.set(sessionId, targetSession);
+
+    // Broadcast queue update to all session participants
+    broadcastToSession(sessionId, "queue_updated", targetSession.queue);
 
     return NextResponse.json({
       queue: targetSession.queue,

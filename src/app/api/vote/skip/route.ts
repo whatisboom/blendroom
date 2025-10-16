@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 import { z } from "zod";
 
 const voteSkipSchema = z.object({
@@ -107,6 +108,9 @@ export async function POST(req: NextRequest) {
       targetSession.updatedAt = Date.now();
       await store.set(sessionId, targetSession);
 
+      // Broadcast track skipped event
+      broadcastToSession(sessionId, "track_skipped", { voteCount });
+
       return NextResponse.json({
         success: true,
         skipped: true,
@@ -117,6 +121,13 @@ export async function POST(req: NextRequest) {
 
     targetSession.updatedAt = Date.now();
     await store.set(sessionId, targetSession);
+
+    // Broadcast vote update
+    broadcastToSession(sessionId, "vote_updated", {
+      type: "skip",
+      count: voteCount,
+      threshold: targetSession.settings.skipThreshold,
+    });
 
     return NextResponse.json({
       success: true,

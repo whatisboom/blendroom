@@ -66,69 +66,6 @@ export class SpotifyService {
   }
 
   /**
-   * Get available genre seeds from Spotify
-   */
-  async getAvailableGenreSeeds(): Promise<string[]> {
-    return spotifyRateLimiter.execute(async () => {
-      const client = createSpotifyClient(this.accessToken);
-      const response = await client.getAvailableGenreSeeds();
-      return response.body.genres;
-    });
-  }
-
-  /**
-   * Get recommendations based on seed tracks, artists, and target audio features
-   */
-  async getRecommendations(params: {
-    seedTracks?: string[];
-    seedArtists?: string[];
-    seedGenres?: string[];
-    targetFeatures?: Partial<AudioFeatures>;
-    limit?: number;
-    market?: string;
-  }): Promise<Track[]> {
-    return spotifyRateLimiter.execute(async () => {
-      const client = createSpotifyClient(this.accessToken);
-
-      const options: Record<string, unknown> = {
-        limit: params.limit || 50,
-        market: params.market || "US", // Add market parameter to avoid regional restrictions
-      };
-
-      if (params.seedTracks) options.seed_tracks = params.seedTracks.slice(0, 5);
-      if (params.seedArtists) options.seed_artists = params.seedArtists.slice(0, 5);
-      if (params.seedGenres) options.seed_genres = params.seedGenres.slice(0, 5);
-
-      // Add target audio features
-      if (params.targetFeatures) {
-        if (params.targetFeatures.danceability !== undefined) {
-          options.target_danceability = params.targetFeatures.danceability;
-        }
-        if (params.targetFeatures.energy !== undefined) {
-          options.target_energy = params.targetFeatures.energy;
-        }
-        if (params.targetFeatures.valence !== undefined) {
-          options.target_valence = params.targetFeatures.valence;
-        }
-        if (params.targetFeatures.tempo !== undefined) {
-          options.target_tempo = params.targetFeatures.tempo;
-        }
-      }
-
-      console.log("Calling Spotify recommendations API with options:", JSON.stringify(options, null, 2));
-
-      try {
-        const response = await client.getRecommendations(options);
-        return response.body.tracks as Track[];
-      } catch (error) {
-        console.error("Spotify recommendations API error:", error);
-        console.error("Options that caused the error:", JSON.stringify(options, null, 2));
-        throw error;
-      }
-    });
-  }
-
-  /**
    * Search for tracks
    */
   async searchTracks(query: string, limit = 20): Promise<SpotifyTrack[]> {

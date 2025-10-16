@@ -34,6 +34,8 @@ export interface Session {
   updatedAt: number;               // Timestamp
   lastParticipantChange: number;   // Timestamp for debouncing regen
   activeDeviceId?: string;         // For device playback mode
+  activeDeviceName?: string;       // Display name of active device
+  activeDeviceType?: string;       // Type of active device (Computer, Smartphone, Speaker, etc.)
 }
 
 export interface CreateSessionInput {

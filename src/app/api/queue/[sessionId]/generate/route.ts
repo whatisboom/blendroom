@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { QueueGenerationService } from "@/lib/services/queue-generation.service";
+import { broadcastToSession } from "@/lib/websocket/server";
 
 /**
  * POST /api/queue/[sessionId]/generate
@@ -54,7 +55,7 @@ export async function POST(
     }
 
     // Generate queue
-    const queueService = new QueueGenerationService(session.accessToken, store);
+    const queueService = new QueueGenerationService(session.accessToken);
     const newQueue = await queueService.generateQueue(targetSession);
 
     // Merge with stable tracks
@@ -67,6 +68,9 @@ export async function POST(
     targetSession.updatedAt = Date.now();
 
     await store.set(sessionId, targetSession);
+
+    // Broadcast queue update to all session participants
+    broadcastToSession(sessionId, "queue_updated", targetSession.queue);
 
     return NextResponse.json({
       queue: targetSession.queue,
