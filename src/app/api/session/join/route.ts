@@ -8,6 +8,9 @@ import { WS_EVENTS } from "@/lib/websocket/events";
 import { triggerBackgroundRegeneration } from "@/lib/queue-background-regen";
 import { z } from "zod";
 
+// Increase timeout for joining session (background taste analysis)
+export const maxDuration = 60;
+
 const joinSessionSchema = z.object({
   code: z.string().min(1),
 });
