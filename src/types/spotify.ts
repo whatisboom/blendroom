@@ -9,6 +9,7 @@ export interface SpotifyArtist {
   external_urls: {
     spotify: string;
   };
+  genres?: string[];
 }
 
 export interface SpotifyAlbum {

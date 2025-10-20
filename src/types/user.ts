@@ -2,7 +2,7 @@
  * User and participant types
  */
 
-import { AudioFeatures, SpotifyArtist } from './spotify';
+import { SpotifyArtist } from './spotify';
 
 export interface User {
   id: string;

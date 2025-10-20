@@ -5,8 +5,6 @@
 import { Participant } from './user';
 import { QueueItem } from './queue';
 import { PlaybackState } from './spotify';
-import { VoteState } from './vote';
-
 import { SessionSettings } from './session';
 
 export interface ServerToClientEvents {

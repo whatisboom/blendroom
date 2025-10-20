@@ -13,6 +13,7 @@ export interface Vote {
 
 export interface SkipVote {
   userId: string;
+  trackId: string;
   timestamp: number;
 }
 

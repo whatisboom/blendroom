@@ -6,6 +6,8 @@ import { Participant, TasteProfile } from './user';
 import { QueueItem } from './queue';
 import { VoteState } from './vote';
 
+export type { Participant };
+
 export interface SessionSettings {
   voteToSkip: boolean;
   skipThreshold: number;           // Number of votes needed
