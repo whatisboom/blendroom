@@ -18,20 +18,19 @@ app.prepare().then(async () => {
     ? path.join(process.cwd(), ".next")
     : path.join(process.cwd());
 
-  // In development, use Next.js auto-generated certs
-  let httpsOptions;
-  if (dev) {
-    const certPath = path.join(process.cwd(), "certificates");
-    try {
-      httpsOptions = {
-        key: fs.readFileSync(path.join(certPath, "localhost-key.pem")),
-        cert: fs.readFileSync(path.join(certPath, "localhost.pem")),
-      };
-    } catch (error) {
-      console.error("Failed to load HTTPS certificates. Running with HTTP instead.");
-      console.error("Run `next dev --experimental-https` first to generate certificates.");
-      process.exit(1);
-    }
+  // Load HTTPS certificates
+  const certPath = path.join(process.cwd(), "certificates");
+  let httpsOptions: { key: Buffer; cert: Buffer };
+
+  try {
+    httpsOptions = {
+      key: fs.readFileSync(path.join(certPath, "localhost-key.pem")),
+      cert: fs.readFileSync(path.join(certPath, "localhost.pem")),
+    };
+  } catch (error) {
+    console.error("Failed to load HTTPS certificates.");
+    console.error("Run `next dev --experimental-https` first to generate certificates.");
+    process.exit(1);
   }
 
   // Create HTTPS server
