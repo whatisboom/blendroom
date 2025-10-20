@@ -14,7 +14,7 @@ interface PlayerControlsProps {
 }
 
 export function PlayerControls({
-  sessionId,
+  sessionId: _sessionId,
   isPlaying,
   isDJ,
   deviceName,

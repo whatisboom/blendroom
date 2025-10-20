@@ -7,7 +7,7 @@ import { SpotifyService } from "@/lib/services/spotify.service";
  * GET /api/playback/state
  * Get current playback state
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);

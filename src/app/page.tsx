@@ -13,7 +13,7 @@ export default async function Home() {
         </h1>
 
         <p className="text-xl text-gray-400">
-          Create collaborative music sessions where everyone's taste shapes the playlist
+          Create collaborative music sessions where everyone&apos;s taste shapes the playlist
         </p>
 
         {session ? (

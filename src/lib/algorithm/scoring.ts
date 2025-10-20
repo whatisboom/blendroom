@@ -115,7 +115,7 @@ function extractTrackGenres(track: Track, profile: TasteProfile): string[] {
   for (const artist of track.artists) {
     const profileArtist = profile.topArtists.find((a) => a.id === artist.id);
     if (profileArtist?.genres) {
-      profileArtist.genres.forEach((g) => genres.add(g));
+      profileArtist.genres.forEach((g: string) => genres.add(g));
     }
   }
 
@@ -136,7 +136,7 @@ function calculateGenreMatch(
   const trackGenres = new Set<string>();
   for (const profile of tasteProfiles) {
     const genres = extractTrackGenres(track, profile);
-    genres.forEach((g) => trackGenres.add(g));
+    genres.forEach((g: string) => trackGenres.add(g));
   }
 
   if (trackGenres.size === 0) return 0;

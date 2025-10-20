@@ -181,7 +181,7 @@ export function DeviceSelector({ sessionId, onDeviceConnected }: DeviceSelectorP
         </div>
 
         <p className="text-xs text-gray-500">
-          Don't see your device? Make sure Spotify is open on the device you want to use.
+          Don&apos;t see your device? Make sure Spotify is open on the device you want to use.
         </p>
       </div>
     );

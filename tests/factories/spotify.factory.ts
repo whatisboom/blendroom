@@ -55,7 +55,7 @@ export function createMockSpotifyTrack(overrides?: Partial<SpotifyTrack>): Spoti
     external_urls: {
       spotify: `https://open.spotify.com/track/${trackId}`,
     },
-    preview_url: faker.helpers.maybe(() => faker.internet.url(), { probability: 0.7 }),
+    preview_url: faker.helpers.maybe(() => faker.internet.url(), { probability: 0.7 }) ?? null,
     ...overrides,
   };
 }

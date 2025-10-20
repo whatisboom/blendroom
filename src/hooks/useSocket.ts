@@ -35,7 +35,7 @@ export function useSocket({ sessionId, autoConnect = true }: UseSocketOptions = 
 
       // Auto-join session if sessionId is provided
       if (sessionId) {
-        socket.emit(WS_EVENTS.JOIN_SESSION, sessionId, (success) => {
+        socket.emit(WS_EVENTS.JOIN_SESSION, sessionId, (success: boolean) => {
           if (success) {
             console.log(`[useSocket] Joined session: ${sessionId}`);
             setIsJoined(true);
@@ -74,7 +74,7 @@ export function useSocket({ sessionId, autoConnect = true }: UseSocketOptions = 
     const socket = socketRef.current;
     if (!socket || !socket.connected || !sessionId) return;
 
-    socket.emit(WS_EVENTS.JOIN_SESSION, sessionId, (success) => {
+    socket.emit(WS_EVENTS.JOIN_SESSION, sessionId, (success: boolean) => {
       if (success) {
         console.log(`[useSocket] Joined session: ${sessionId}`);
         setIsJoined(true);
