@@ -5,6 +5,10 @@ import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { QueueGenerationService } from "@/lib/services/queue-generation.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { createErrorResponse } from "@/lib/utils/api-error-handler";
+
+// Increase timeout for queue generation (multiple Spotify API calls)
+export const maxDuration = 60;
 
 /**
  * POST /api/queue/[sessionId]/generate
@@ -77,34 +81,6 @@ export async function POST(
       generated: newQueue.length,
     });
   } catch (error) {
-    console.error("Error generating queue:", error);
-
-    // Handle Spotify API errors
-    if (error && typeof error === 'object' && 'body' in error) {
-      const spotifyError = error as { statusCode?: number; body?: { error?: { message?: string } } };
-      const errorMessage = spotifyError.body?.error?.message || "Spotify API error";
-      console.error("Spotify API error details:", {
-        statusCode: spotifyError.statusCode,
-        body: spotifyError.body,
-        message: errorMessage
-      });
-
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: spotifyError.statusCode || 400 }
-      );
-    }
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return createErrorResponse(error, "Queue Generate");
   }
 }

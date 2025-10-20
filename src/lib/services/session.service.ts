@@ -1,6 +1,7 @@
 import { Session, Participant, SessionSettings } from "@/types";
 import { SessionStore } from "../session/store.interface";
 import { generateSessionCode } from "../utils/session-code";
+import { logErrorDetails } from "../utils/api-error-handler";
 import { nanoid } from "nanoid";
 import { TasteAnalysisService } from "./taste-analysis.service";
 import { QueueGenerationService } from "./queue-generation.service";
@@ -82,27 +83,11 @@ export class SessionService {
 
     await this.store.set(sessionId, session);
 
-    // Generate initial profile
-    await this.updateSessionProfile(sessionId);
-
-    // Generate initial queue
-    try {
-      const updatedSession = await this.store.get(sessionId);
-      if (updatedSession && updatedSession.profile) {
-        const initialQueue = await this.queueGenerationService.generateQueue(
-          updatedSession,
-          MAX_QUEUE_SIZE
-        );
-        updatedSession.queue = initialQueue;
-        updatedSession.updatedAt = Date.now();
-        await this.store.set(sessionId, updatedSession);
-        console.log(`Generated initial queue with ${initialQueue.length} tracks`);
-        return updatedSession;
-      }
-    } catch (error) {
-      console.error("Failed to generate initial queue:", error);
-      // Continue without queue - will be generated later
-    }
+    // Generate initial profile and queue in background
+    // This prevents timeout on session creation
+    this.initializeSessionInBackground(sessionId).catch((err) => {
+      console.error(`Failed to initialize session ${sessionId}:`, err);
+    });
 
     return session;
   }
@@ -330,6 +315,7 @@ export class SessionService {
 
   /**
    * Update session profile based on participants
+   * Reuses existing taste profiles when participants haven't changed
    */
   async updateSessionProfile(sessionId: string): Promise<void> {
     const session = await this.store.get(sessionId);
@@ -340,28 +326,45 @@ export class SessionService {
 
     try {
       console.log(`Updating profile for session ${sessionId} with ${session.participants.length} participants`);
-      const profile = await this.tasteAnalysisService.generateSessionProfile(
-        session.participants
-      );
 
-      session.profile = profile;
+      // Check if we can reuse existing taste profiles
+      const existingProfile = session.profile;
+      const tasteProfiles = existingProfile?.tasteProfiles || [];
+
+      // Get participant IDs from existing profiles
+      const existingUserIds = new Set(tasteProfiles.map(p => p.userId));
+      const currentUserIds = new Set(session.participants.map(p => p.userId));
+
+      // Only regenerate if participants have changed
+      const participantsChanged =
+        existingUserIds.size !== currentUserIds.size ||
+        !Array.from(currentUserIds).every(id => existingUserIds.has(id));
+
+      if (participantsChanged || tasteProfiles.length === 0) {
+        console.log(`Participants changed or no existing profiles, regenerating for session ${sessionId}`);
+        const profile = await this.tasteAnalysisService.generateSessionProfile(
+          session.participants
+        );
+        session.profile = profile;
+      } else {
+        console.log(`Reusing existing taste profiles for session ${sessionId}, only updating common artists/genres`);
+        // Reuse existing taste profiles, just update common artists/genres
+        const commonArtistObjects = this.tasteAnalysisService.findCommonArtists(tasteProfiles);
+        const commonArtists = commonArtistObjects.map((a) => a.id);
+        const commonGenres = this.tasteAnalysisService.findCommonGenres(tasteProfiles);
+
+        session.profile = {
+          commonArtists,
+          commonGenres,
+          tasteProfiles, // Reuse existing profiles
+        };
+      }
+
       session.updatedAt = Date.now();
-
       await this.store.set(sessionId, session);
       console.log(`Successfully updated profile for session ${sessionId}`);
     } catch (error) {
-      console.error("Failed to update session profile:", error);
-      // Log more details about the error
-      if (error && typeof error === 'object') {
-        console.error("Error details:", {
-          // @ts-expect-error - accessing error properties
-          statusCode: error.statusCode,
-          // @ts-expect-error - accessing error properties
-          message: error.message,
-          // @ts-expect-error - accessing error properties
-          body: error.body,
-        });
-      }
+      logErrorDetails("Update Session Profile", error);
       throw error;
     }
   }
@@ -420,5 +423,41 @@ export class SessionService {
    */
   isParticipant(session: Session, userId: string): boolean {
     return session.participants.some((p) => p.userId === userId);
+  }
+
+  /**
+   * Initialize session profile and queue in background
+   * Called asynchronously after session creation to avoid timeout
+   */
+  private async initializeSessionInBackground(sessionId: string): Promise<void> {
+    console.log(`[SessionInit] Starting background initialization for session ${sessionId}`);
+
+    try {
+      // Generate initial profile
+      await this.updateSessionProfile(sessionId);
+      console.log(`[SessionInit] Profile generated for session ${sessionId}`);
+
+      // Generate initial queue
+      const session = await this.store.get(sessionId);
+      if (session && session.profile) {
+        const initialQueue = await this.queueGenerationService.generateQueue(
+          session,
+          MAX_QUEUE_SIZE
+        );
+        session.queue = initialQueue;
+        session.updatedAt = Date.now();
+        await this.store.set(sessionId, session);
+        console.log(`[SessionInit] Generated initial queue with ${initialQueue.length} tracks for session ${sessionId}`);
+
+        // Import and broadcast queue update
+        const { broadcastToSession } = await import("../websocket/server");
+        const { WS_EVENTS } = await import("../websocket/events");
+        broadcastToSession(sessionId, WS_EVENTS.QUEUE_UPDATED, initialQueue);
+        console.log(`[SessionInit] Broadcasted queue update for session ${sessionId}`);
+      }
+    } catch (error) {
+      logErrorDetails("SessionInit", error);
+      // Session remains valid without queue - user can generate manually
+    }
   }
 }

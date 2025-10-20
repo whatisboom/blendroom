@@ -3,7 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
+import { createErrorResponse } from "@/lib/utils/api-error-handler";
 import { z } from "zod";
+
+// Increase timeout for session creation (background queue generation may take time)
+export const maxDuration = 60;
 
 const createSessionSchema = z.object({
   customCode: z.string().min(4).max(12).optional(),
@@ -67,18 +71,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error creating session:", error);
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return createErrorResponse(error, "Session Create");
   }
 }
