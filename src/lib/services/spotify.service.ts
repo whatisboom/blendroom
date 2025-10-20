@@ -50,7 +50,7 @@ export class SpotifyService {
           console.log(`Fetching audio features for chunk of ${chunk.length} tracks`);
           const response = await client.getAudioFeaturesForTracks(chunk);
           console.log(`Successfully fetched audio features for ${chunk.length} tracks`);
-          return response.body.audio_features.filter((f): f is AudioFeatures => f !== null);
+          return response.body.audio_features.filter((f: AudioFeatures | null): f is AudioFeatures => f !== null);
         });
         allFeatures.push(...features);
       } catch (error) {
@@ -103,6 +103,55 @@ export class SpotifyService {
       const response = await client.searchTracks(query, { limit });
 
       return (response.body.tracks?.items as Track[]) || [];
+    });
+  }
+
+  /**
+   * Get track recommendations based on seed artists, tracks, and genres
+   * Spotify API allows up to 5 seeds total (combined artists + tracks + genres)
+   */
+  async getRecommendations(options: {
+    seedArtists?: string[];
+    seedTracks?: string[];
+    seedGenres?: string[];
+    limit?: number;
+    targetEnergy?: number;
+    targetValence?: number;
+  }): Promise<Track[]> {
+    return spotifyRateLimiter.execute(async () => {
+      const client = createSpotifyClient(this.accessToken);
+
+      // Spotify API limit: 5 seeds total
+      const seedArtists = (options.seedArtists || []).slice(0, 5);
+      const seedTracks = (options.seedTracks || []).slice(0, 5);
+      const seedGenres = (options.seedGenres || []).slice(0, 5);
+
+      // Build options object
+      const requestOptions: Record<string, unknown> = {
+        limit: options.limit || 20,
+      };
+
+      if (seedArtists.length > 0) {
+        requestOptions.seed_artists = seedArtists.join(',');
+      }
+      if (seedTracks.length > 0) {
+        requestOptions.seed_tracks = seedTracks.join(',');
+      }
+      if (seedGenres.length > 0) {
+        requestOptions.seed_genres = seedGenres.join(',');
+      }
+      if (options.targetEnergy !== undefined) {
+        requestOptions.target_energy = options.targetEnergy;
+      }
+      if (options.targetValence !== undefined) {
+        requestOptions.target_valence = options.targetValence;
+      }
+
+      console.log(`Fetching recommendations with seeds: ${seedArtists.length} artists, ${seedTracks.length} tracks, ${seedGenres.length} genres`);
+      const response = await client.getRecommendations(requestOptions);
+      console.log(`Received ${response.body.tracks.length} recommendations`);
+
+      return response.body.tracks as Track[];
     });
   }
 
