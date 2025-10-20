@@ -3,6 +3,7 @@ import { Server as HTTPSServer } from "https";
 import { Server as SocketIOServer } from "socket.io";
 import type { ServerToClientEvents, ClientToServerEvents, SocketData } from "@/types/websocket";
 import { WS_EVENTS } from "./events";
+import { subscribeToPattern, publishEvent } from "@/lib/redis-events";
 
 let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData> | null = null;
 
@@ -58,6 +59,33 @@ export function initializeSocketIO(server: HTTPServer | HTTPSServer) {
     });
   });
 
+  // Subscribe to Redis pub/sub for cross-context broadcasting
+  subscribeToPattern("session:*", (channel, message) => {
+    try {
+      // Parse channel to extract sessionId and event
+      // Format: session:{sessionId}:{event}
+      const parts = channel.split(":");
+      if (parts.length !== 3) {
+        console.warn(`[WebSocket] Invalid channel format: ${channel}`);
+        return;
+      }
+
+      const sessionId = parts[1];
+      const event = parts[2] as keyof ServerToClientEvents;
+
+      // Parse message data
+      const data = JSON.parse(message);
+
+      // Broadcast to Socket.IO room
+      if (io) {
+        io.to(sessionId).emit(event, data);
+        console.log(`[WebSocket] Broadcasted ${event} to session ${sessionId} via Redis`);
+      }
+    } catch (error) {
+      console.error("[WebSocket] Error handling Redis message:", error);
+    }
+  });
+
   console.log("[WebSocket] Socket.IO server initialized");
   return io;
 }
@@ -73,19 +101,30 @@ export function getIO(): SocketIOServer<ClientToServerEvents, ServerToClientEven
 }
 
 /**
- * Broadcast an event to all clients in a session room
+ * Broadcast an event to all clients in a session room via Redis pub/sub
+ * This allows API routes to trigger broadcasts without direct access to Socket.IO
  */
-export function broadcastToSession<E extends keyof ServerToClientEvents>(
+export async function broadcastToSession<E extends keyof ServerToClientEvents>(
   sessionId: string,
   event: E,
   ...args: Parameters<ServerToClientEvents[E]>
-) {
-  if (!io) {
-    console.warn(`[WebSocket] Cannot broadcast ${event}: Socket.IO not initialized`);
-    return;
-  }
+): Promise<void> {
+  try {
+    // Publish to Redis - the WebSocket server will pick it up and broadcast
+    const channel = `session:${sessionId}:${event}`;
+    const data = args[0]; // First argument is the data payload
 
-  // @ts-expect-error - TypeScript struggles with variadic generic parameters
-  io.to(sessionId).emit(event, ...args);
-  console.log(`[WebSocket] Broadcasted ${event} to session: ${sessionId}`);
+    await publishEvent(channel, data);
+    console.log(`[WebSocket] Published ${event} to Redis channel: ${channel}`);
+  } catch (error) {
+    console.error(`[WebSocket] Error publishing to Redis:`, error);
+
+    // Fallback: try direct broadcast if io is available (for same-process calls)
+    if (io) {
+      io.to(sessionId).emit(event, ...args);
+      console.log(`[WebSocket] Fallback: Direct broadcast ${event} to session: ${sessionId}`);
+    } else {
+      console.warn(`[WebSocket] Cannot broadcast ${event}: Redis publish failed and Socket.IO not initialized`);
+    }
+  }
 }
