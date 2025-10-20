@@ -12,7 +12,14 @@
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:next-auth.js.org)",
       "Bash(npm run dev)",
-      "WebFetch(domain:developer.spotify.com)"
+      "WebFetch(domain:developer.spotify.com)",
+      "mcp__puppeteer__puppeteer_screenshot",
+      "mcp__puppeteer__puppeteer_evaluate",
+      "mcp__puppeteer__puppeteer_click",
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
