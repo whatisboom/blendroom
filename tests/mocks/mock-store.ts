@@ -32,6 +32,25 @@ export class MockSessionStore implements SessionStore {
     return Array.from(this.sessions.values());
   }
 
+  async list(): Promise<Session[]> {
+    return Array.from(this.sessions.values());
+  }
+
+  async exists(sessionId: string): Promise<boolean> {
+    return this.sessions.has(sessionId);
+  }
+
+  async getByUserId(userId: string): Promise<Session[]> {
+    const sessions: Session[] = [];
+    for (const session of this.sessions.values()) {
+      const isParticipant = session.participants.some((p) => p.userId === userId);
+      if (isParticipant) {
+        sessions.push(session);
+      }
+    }
+    return sessions;
+  }
+
   // Test helpers
   clear(): void {
     this.sessions.clear();
