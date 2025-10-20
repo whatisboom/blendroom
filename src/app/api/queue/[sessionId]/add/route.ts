@@ -65,22 +65,30 @@ export async function POST(
       );
     }
 
-    // Fetch track details from Spotify
+    // Fetch track details from Spotify (search by ID to get full track object)
     const spotifyService = new SpotifyService(session.accessToken);
-    const audioFeatures = await spotifyService.getAudioFeatures([trackId]);
+    const searchResults = await spotifyService.searchTracks(`track:${trackId}`, 1);
 
-    if (audioFeatures.length === 0) {
+    if (searchResults.length === 0) {
       return NextResponse.json(
         { error: "Track not found" },
         { status: 404 }
       );
     }
 
+    const track = searchResults[0];
+
     // Create queue item
     const queueItem: QueueItem = {
       track: {
-        id: trackId,
-        audioFeatures: audioFeatures[0],
+        id: track.id,
+        name: track.name,
+        uri: track.uri,
+        duration_ms: track.duration_ms,
+        artists: track.artists,
+        album: track.album,
+        preview_url: track.preview_url,
+        external_urls: track.external_urls,
       },
       position: targetSession.queue.length,
       addedBy: session.user.id,
