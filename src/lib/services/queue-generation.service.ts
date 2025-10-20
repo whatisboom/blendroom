@@ -32,7 +32,7 @@ export class QueueGenerationService {
       commonArtists,
       commonGenres,
       tasteProfiles,
-      targetSize * 3 // Get 3x more candidates for better selection
+      targetSize * 2 // Get 2x candidates for selection (reduced from 3x for efficiency)
     );
 
     // 2. Remove duplicates (already in queue, played recently, or already played)
@@ -70,8 +70,9 @@ export class QueueGenerationService {
   }
 
   /**
-   * Get candidate tracks from Spotify using artist top tracks
-   * Strategy: Fetch top tracks from common artists and blend them
+   * Get candidate tracks from Spotify using recommendations endpoint
+   * Strategy: Use Spotify's recommendation engine with seed artists and genres
+   * This is much more efficient than fetching from each artist individually
    */
   private async getCandidateTracks(
     commonArtists: string[],
@@ -79,32 +80,57 @@ export class QueueGenerationService {
     tasteProfiles: TasteProfile[],
     count: number
   ): Promise<Track[]> {
-    // Select artists (mix of common and individual favorites)
-    const selectedArtists = this.selectArtists(commonArtists, tasteProfiles);
-
-    console.log(`Fetching tracks from ${selectedArtists.length} artists`);
-
     const allTracks: Track[] = [];
-    const tracksPerArtist = Math.ceil(count / Math.min(selectedArtists.length, 15));
 
-    // Get top tracks from each artist (limit to 15 artists for more variety)
-    for (const artistId of selectedArtists.slice(0, 15)) {
+    // Strategy 1: Use recommendations with seed artists and genres (most efficient)
+    // Spotify allows up to 5 seeds total, so we'll make multiple calls if needed
+    const selectedArtists = this.selectArtists(commonArtists, tasteProfiles);
+    const selectedGenres = commonGenres.slice(0, 5);
+
+    console.log(`Fetching recommendations using ${selectedArtists.length} artists and ${selectedGenres.length} genres`);
+
+    // Make multiple recommendation calls to get enough variety
+    // Each call can use up to 5 seeds
+    const recommendationCalls = Math.ceil(count / 20); // Get 20 tracks per call
+    const artistChunks = this.chunkArray(selectedArtists, 3); // Use 3 artists per call + 2 genres
+
+    for (let i = 0; i < Math.min(recommendationCalls, artistChunks.length); i++) {
       try {
-        const tracks = await this.spotifyService.searchTracksByArtist(
-          artistId,
-          tracksPerArtist
-        );
-        allTracks.push(...tracks);
-        console.log(`Got ${tracks.length} tracks from artist ${artistId}`);
+        const seedArtists = artistChunks[i];
+        const seedGenres = selectedGenres.slice(0, 2); // Use 2 genres per call
+
+        const recommendations = await this.spotifyService.getRecommendations({
+          seedArtists,
+          seedGenres: seedGenres.length > 0 ? seedGenres : undefined,
+          limit: 20,
+        });
+
+        allTracks.push(...recommendations);
+        console.log(`Got ${recommendations.length} recommendations from call ${i + 1}/${recommendationCalls}`);
       } catch (error) {
-        console.error(`Failed to get tracks for artist ${artistId}:`, error);
+        console.error(`Failed to get recommendations for call ${i + 1}:`, error);
       }
     }
 
-    // Shuffle tracks to mix artists
+    // If we didn't get enough tracks, fall back to artist top tracks
+    if (allTracks.length < count / 2) {
+      console.log(`Not enough recommendations (${allTracks.length}), fetching top tracks from popular artists`);
+
+      for (const artistId of selectedArtists.slice(0, 5)) {
+        try {
+          const tracks = await this.spotifyService.searchTracksByArtist(artistId, 10);
+          allTracks.push(...tracks);
+          console.log(`Got ${tracks.length} top tracks from artist ${artistId}`);
+        } catch (error) {
+          console.error(`Failed to get tracks for artist ${artistId}:`, error);
+        }
+      }
+    }
+
+    // Shuffle tracks to mix variety
     const shuffled = this.shuffleArray(allTracks);
 
-    console.log(`Successfully collected ${shuffled.length} candidate tracks from artists`);
+    console.log(`Successfully collected ${shuffled.length} candidate tracks`);
     return shuffled.slice(0, count);
   }
 
@@ -118,6 +144,17 @@ export class QueueGenerationService {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
+  }
+
+  /**
+   * Chunk array into smaller arrays
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
   }
 
   /**
