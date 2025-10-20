@@ -1,5 +1,4 @@
 import { QueueGenerationService } from "./services/queue-generation.service";
-import { SessionService } from "./services/session.service";
 import type { SessionStore } from "./session/store.interface";
 import { broadcastToSession } from "./websocket/server";
 import { WS_EVENTS } from "./websocket/events";
@@ -15,6 +14,7 @@ const regenerationLocks = new Set<string>();
 
 const DEBOUNCE_DELAY_MS = 5000; // 5 seconds
 const STABLE_TRACK_COUNT = 3;
+const REGENERATION_TIMEOUT_MS = 30000; // 30 seconds timeout for queue regeneration
 
 /**
  * Trigger background queue regeneration after participant changes
@@ -47,7 +47,7 @@ export function triggerBackgroundRegeneration(
 }
 
 /**
- * Execute the queue regeneration with locking mechanism
+ * Execute the queue regeneration with locking mechanism and timeout
  */
 async function executeQueueRegeneration(
   sessionId: string,
@@ -64,6 +64,39 @@ async function executeQueueRegeneration(
   regenerationLocks.add(sessionId);
   console.log(`[QueueRegen] Starting regeneration for session ${sessionId}`);
 
+  try {
+    // Wrap regeneration in timeout to prevent hanging
+    await Promise.race([
+      performRegeneration(sessionId, store, accessToken),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Queue regeneration timeout')), REGENERATION_TIMEOUT_MS)
+      )
+    ]);
+  } catch (error) {
+    console.error(`[QueueRegen] Error regenerating queue for session ${sessionId}:`, error);
+
+    // Log additional error details
+    if (error && typeof error === 'object') {
+      console.error('[QueueRegen] Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+      });
+    }
+  } finally {
+    // Release lock
+    regenerationLocks.delete(sessionId);
+    console.log(`[QueueRegen] Released lock for session ${sessionId}`);
+  }
+}
+
+/**
+ * Perform the actual queue regeneration
+ */
+async function performRegeneration(
+  sessionId: string,
+  store: SessionStore,
+  accessToken: string
+): Promise<void> {
   try {
     // Get current session state
     const session = await store.get(sessionId);
@@ -110,21 +143,9 @@ async function executeQueueRegeneration(
     // Broadcast queue update to all clients
     broadcastToSession(sessionId, WS_EVENTS.QUEUE_UPDATED, mergedQueue);
     console.log(`[QueueRegen] Broadcasted queue update to session ${sessionId}`);
-
   } catch (error) {
-    console.error(`[QueueRegen] Error regenerating queue for session ${sessionId}:`, error);
-
-    // Log additional error details
-    if (error && typeof error === 'object') {
-      console.error('[QueueRegen] Error details:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-      });
-    }
-  } finally {
-    // Release lock
-    regenerationLocks.delete(sessionId);
-    console.log(`[QueueRegen] Released lock for session ${sessionId}`);
+    console.error(`[QueueRegen] Error in performRegeneration for session ${sessionId}:`, error);
+    throw error;
   }
 }
 
