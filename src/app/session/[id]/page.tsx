@@ -75,7 +75,7 @@ export default function SessionPage({
   const previousTrackIdRef = useRef<string | null>(null);
 
   // Initialize WebSocket connection
-  const { socket, isConnected, isJoined } = useSocket({
+  const { socket, isJoined } = useSocket({
     sessionId: resolvedParams.id,
     autoConnect: true,
   });
@@ -611,6 +611,7 @@ export default function SessionPage({
                 queue={session.queue}
                 sessionId={session.id}
                 isDJ={isUserDJ}
+                isSessionOwner={userSession?.user?.id === session.hostId}
                 onPlayFromQueue={handlePlayFromQueue}
                 onReorderComplete={handleQueueReordered}
               />

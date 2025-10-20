@@ -72,8 +72,9 @@ export async function PUT(
       );
     }
 
-    // Don't allow reordering stable tracks (first 3)
-    if (fromIndex < 3 || toIndex < 3) {
+    // Don't allow reordering stable tracks (first 3) UNLESS user is session owner
+    const isSessionOwner = targetSession.hostId === session.user.id;
+    if (!isSessionOwner && (fromIndex < 3 || toIndex < 3)) {
       return NextResponse.json(
         { error: "Cannot reorder stable tracks (first 3 in queue)" },
         { status: 400 }

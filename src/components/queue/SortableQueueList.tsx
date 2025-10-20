@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -43,6 +43,7 @@ interface SortableQueueListProps {
   queue: QueueTrack[];
   sessionId: string;
   isDJ: boolean;
+  isSessionOwner: boolean;
   onPlayFromQueue?: (position: number) => void;
   onReorderComplete?: () => void;
 }
@@ -52,12 +53,14 @@ function SortableQueueItem({
   index,
   isDJ,
   isStable,
+  isSessionOwner,
   onClick,
 }: {
   item: QueueTrack;
   index: number;
   isDJ: boolean;
   isStable: boolean;
+  isSessionOwner: boolean;
   onClick?: () => void;
 }) {
   const {
@@ -69,7 +72,7 @@ function SortableQueueItem({
     isDragging,
   } = useSortable({
     id: `${item.track.id}-${item.position}`,
-    disabled: !isDJ || isStable,
+    disabled: !isDJ || (isStable && !isSessionOwner),
   });
 
   const style = {
@@ -87,13 +90,13 @@ function SortableQueueItem({
           ? "bg-green-900/20 border border-green-700/30"
           : "bg-gray-800"
       } ${
-        isDJ && !isStable
+        isDJ && (!isStable || isSessionOwner)
           ? "cursor-grab active:cursor-grabbing hover:bg-gray-700"
           : "cursor-default"
       }`}
     >
-      {/* Drag handle (DJ only, not for stable tracks) */}
-      {isDJ && !isStable && (
+      {/* Drag handle (DJ only, session owner can drag stable tracks) */}
+      {isDJ && (!isStable || isSessionOwner) && (
         <div
           {...attributes}
           {...listeners}
@@ -151,16 +154,29 @@ export function SortableQueueList({
   queue,
   sessionId,
   isDJ,
+  isSessionOwner,
   onPlayFromQueue,
   onReorderComplete,
 }: SortableQueueListProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [localQueue, setLocalQueue] = useState(queue);
+  const optimisticUpdateRef = useRef(false);
 
-  // Update local queue when prop changes (WebSocket updates)
-  if (queue !== localQueue && !activeId) {
+  // Sync prop queue to local state, but avoid overwriting optimistic updates
+  useEffect(() => {
+    // Skip if we just made an optimistic update
+    if (optimisticUpdateRef.current) {
+      optimisticUpdateRef.current = false;
+      return;
+    }
+
+    // Don't update during drag
+    if (activeId) {
+      return;
+    }
+
     setLocalQueue(queue);
-  }
+  }, [queue, activeId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -197,16 +213,18 @@ export function SortableQueueList({
     }
 
     // Don't allow moving stable tracks or moving tracks into stable zone
+    // UNLESS the user is the session owner
     const isMovingStableTrack = localQueue[oldIndex].isStable;
     const isMovingToStableZone = newIndex < 3;
 
-    if (isMovingStableTrack || isMovingToStableZone) {
-      console.log("Cannot move stable tracks or move tracks into stable zone");
+    if (!isSessionOwner && (isMovingStableTrack || isMovingToStableZone)) {
+      console.log("Cannot move stable tracks or move tracks into stable zone (session owner can)");
       return;
     }
 
     // Optimistically update local state
     const newQueue = arrayMove(localQueue, oldIndex, newIndex);
+    optimisticUpdateRef.current = true;
     setLocalQueue(newQueue);
 
     // Call API to persist the reorder
@@ -215,8 +233,8 @@ export function SortableQueueList({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fromPosition: oldIndex,
-          toPosition: newIndex,
+          fromIndex: oldIndex,
+          toIndex: newIndex,
         }),
       });
 
@@ -268,6 +286,7 @@ export function SortableQueueList({
               index={index}
               isDJ={isDJ}
               isStable={item.isStable}
+              isSessionOwner={isSessionOwner}
               onClick={
                 onPlayFromQueue ? () => onPlayFromQueue(index) : undefined
               }
