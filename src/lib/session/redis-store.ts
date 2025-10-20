@@ -11,6 +11,7 @@ export class RedisStore implements SessionStore {
   private readonly keyPrefix = "session:";
   private readonly codePrefix = "code:";
   private readonly userPrefix = "user:";
+  private readonly sessionsSet = "sessions:active"; // Set to track all active sessions
   private readonly ttl = 60 * 60 * 24; // 24 hours
 
   constructor(redisUrl?: string) {
@@ -58,6 +59,10 @@ export class RedisStore implements SessionStore {
     // Map code to session ID
     pipeline.set(this.codePrefix + session.code, sessionId, "EX", this.ttl);
 
+    // Add to active sessions set
+    pipeline.sadd(this.sessionsSet, sessionId);
+    pipeline.expire(this.sessionsSet, this.ttl);
+
     // Index sessions by user ID for each participant
     for (const participant of session.participants) {
       pipeline.sadd(this.userPrefix + participant.userId, sessionId);
@@ -79,6 +84,9 @@ export class RedisStore implements SessionStore {
     // Delete code mapping
     pipeline.del(this.codePrefix + session.code);
 
+    // Remove from active sessions set
+    pipeline.srem(this.sessionsSet, sessionId);
+
     // Remove from user indexes
     for (const participant of session.participants) {
       pipeline.srem(this.userPrefix + participant.userId, sessionId);
@@ -88,13 +96,18 @@ export class RedisStore implements SessionStore {
   }
 
   async list(): Promise<Session[]> {
-    const keys = await this.redis.keys(this.keyPrefix + "*");
-    if (keys.length === 0) return [];
+    // Use SMEMBERS to get all session IDs from the active sessions set
+    // This is O(N) but doesn't block like KEYS does
+    const sessionIds = await this.redis.smembers(this.sessionsSet);
+    if (sessionIds.length === 0) return [];
 
-    const data = await this.redis.mget(keys);
-    return data
-      .filter((d): d is string => d !== null)
-      .map((d) => JSON.parse(d) as Session);
+    // Fetch all sessions in parallel
+    const sessions = await Promise.all(
+      sessionIds.map(id => this.get(id))
+    );
+
+    // Filter out null sessions (expired or deleted)
+    return sessions.filter((s): s is Session => s !== null);
   }
 
   async exists(sessionId: string): Promise<boolean> {
