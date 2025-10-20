@@ -19,7 +19,9 @@
       "Bash(npx tsc:*)",
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:coverage:*)"
     ],
     "deny": [],
     "ask": []
