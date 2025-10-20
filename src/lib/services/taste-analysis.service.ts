@@ -25,10 +25,10 @@ export class TasteAnalysisService {
     }
 
     console.log(`Fetching taste profile for user ${userId}...`);
-    // Fetch user's top tracks and artists
+    // Fetch user's top tracks and artists (reduced from 50 to 20 for performance)
     const [topTracks, topArtists] = await Promise.all([
-      this.spotifyService.getUserTopTracks(50, "medium_term"),
-      this.spotifyService.getUserTopArtists(50, "medium_term"),
+      this.spotifyService.getUserTopTracks(20, "medium_term"),
+      this.spotifyService.getUserTopArtists(20, "medium_term"),
     ]);
     console.log(`Successfully fetched ${topTracks.length} tracks and ${topArtists.length} artists for user ${userId}`);
 
@@ -54,8 +54,9 @@ export class TasteAnalysisService {
 
   /**
    * Find common artists between multiple users
+   * Made public to allow session service to reuse taste profiles
    */
-  findCommonArtists(profiles: TasteProfile[]): SpotifyArtist[] {
+  public findCommonArtists(profiles: TasteProfile[]): SpotifyArtist[] {
     if (profiles.length === 0) return [];
     if (profiles.length === 1) return profiles[0].topArtists;
 
@@ -81,8 +82,9 @@ export class TasteAnalysisService {
 
   /**
    * Find common genres between multiple users
+   * Made public to allow session service to reuse taste profiles
    */
-  findCommonGenres(profiles: TasteProfile[]): string[] {
+  public findCommonGenres(profiles: TasteProfile[]): string[] {
     if (profiles.length === 0) return [];
     if (profiles.length === 1) return profiles[0].topGenres;
 
