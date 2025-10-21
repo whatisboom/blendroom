@@ -84,6 +84,7 @@ describe('AddTrackModal', () => {
     });
 
     it('calls onClose when modal is closed', async () => {
+      const user = userEvent.setup();
       renderWithProviders(
         <AddTrackModal
           isOpen={true}
@@ -95,7 +96,7 @@ describe('AddTrackModal', () => {
 
       // Find and click close button (X button in modal)
       const closeButton = screen.getByLabelText(/close/i);
-      fireEvent.click(closeButton);
+      await user.click(closeButton);
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalledTimes(1);
