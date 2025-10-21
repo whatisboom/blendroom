@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Save, Loader2 } from "lucide-react";
 import type { SessionSettings } from "@/types/session";
@@ -28,6 +28,15 @@ export function SessionSettingsModal({
   const [skipThreshold, setSkipThreshold] = useState(currentSettings.skipThreshold);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset form when modal opens or settings change
+  useEffect(() => {
+    if (isOpen) {
+      setVoteToSkip(currentSettings.voteToSkip);
+      setSkipThreshold(currentSettings.skipThreshold);
+      setError(null);
+    }
+  }, [isOpen, currentSettings]);
 
   const handleSave = async () => {
     setIsSaving(true);
