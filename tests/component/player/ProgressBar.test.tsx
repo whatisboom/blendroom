@@ -1,17 +1,11 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { screen, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { screen, act } from '@testing-library/react';
 import { renderWithProviders } from '../../utils/component-test-utils';
+import { useTimerTestLifecycle } from '../../utils/test-lifecycle';
 import { ProgressBar } from '@/components/player/ProgressBar';
 
 describe('ProgressBar', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  useTimerTestLifecycle();
 
   describe('Time Formatting', () => {
     it('formats seconds correctly', () => {
