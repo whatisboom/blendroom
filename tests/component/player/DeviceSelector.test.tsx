@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../utils/component-test-utils';
 import { DeviceSelector } from '@/components/player/DeviceSelector';
 import type { SpotifyDevice } from '@/types';
-import { useFetchMock } from '../../utils/mock-helpers';
+import { useFetchMock, createMockResponse, useConsoleErrorSpy } from '../../utils/mock-helpers';
 
 describe('DeviceSelector', () => {
   const mockFetch = useFetchMock();
@@ -80,6 +80,8 @@ describe('DeviceSelector', () => {
   });
 
   describe('Finding Devices', () => {
+    useConsoleErrorSpy();
+
     it('shows loading state when finding devices', async () => {
       const user = userEvent.setup();
       mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
@@ -98,10 +100,9 @@ describe('DeviceSelector', () => {
 
     it('calls API with correct sessionId', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -118,10 +119,9 @@ describe('DeviceSelector', () => {
 
     it('displays found devices', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -136,10 +136,9 @@ describe('DeviceSelector', () => {
 
     it('shows device types', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -160,10 +159,9 @@ describe('DeviceSelector', () => {
 
     it('shows active indicator for active device', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -176,11 +174,9 @@ describe('DeviceSelector', () => {
 
     it('handles API error', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'No devices found' }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ error: 'No devices found' }, { ok: false })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -194,7 +190,6 @@ describe('DeviceSelector', () => {
 
     it('handles network error', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -209,7 +204,6 @@ describe('DeviceSelector', () => {
 
     it('handles non-Error exceptions', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockRejectedValue('Unknown error');
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -224,10 +218,9 @@ describe('DeviceSelector', () => {
 
     it('handles empty device list', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: [] }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: [] })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -241,13 +234,11 @@ describe('DeviceSelector', () => {
 
     it('clears previous error when finding devices again', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       // First call fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'First error' }),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ error: 'First error' }, { ok: false })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -258,10 +249,9 @@ describe('DeviceSelector', () => {
       });
 
       // Second call succeeds
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       await user.click(screen.getByText('Find Devices'));
 
@@ -276,10 +266,9 @@ describe('DeviceSelector', () => {
   describe('Device List View', () => {
     beforeEach(async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
       await user.click(screen.getByText('Find Devices'));
@@ -321,14 +310,15 @@ describe('DeviceSelector', () => {
   });
 
   describe('Device Selection', () => {
+    useConsoleErrorSpy();
+
     it('calls API with device ID when device is selected', async () => {
       const user = userEvent.setup();
 
       // First call to find devices
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ availableDevices: mockDevices }),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ availableDevices: mockDevices })
+      );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
       await user.click(screen.getByText('Find Devices'));
@@ -338,10 +328,9 @@ describe('DeviceSelector', () => {
       });
 
       // Second call to select device
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({})
+      );
 
       const laptopButton = screen.getByText('My Laptop').closest('button');
       await user.click(laptopButton!);
@@ -359,14 +348,12 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
       await user.click(screen.getByText('Find Devices'));
@@ -389,14 +376,12 @@ describe('DeviceSelector', () => {
       const onDeviceConnected = vi.fn();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(
         <DeviceSelector sessionId={mockSessionId} onDeviceConnected={onDeviceConnected} />
@@ -418,17 +403,14 @@ describe('DeviceSelector', () => {
 
     it('handles selection error', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          json: async () => ({ error: 'Failed to connect device' }),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({ error: 'Failed to connect device' }, { ok: false })
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -451,10 +433,9 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
         .mockImplementationOnce(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -479,14 +460,12 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -511,14 +490,12 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
       await user.click(screen.getByText('Find Devices'));
@@ -584,14 +561,12 @@ describe('DeviceSelector', () => {
       }];
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: devicesWithoutName }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: devicesWithoutName })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -627,14 +602,12 @@ describe('DeviceSelector', () => {
 
       // Use mockResolvedValueOnce for each call
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        );
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
 
@@ -662,10 +635,9 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
         .mockImplementationOnce(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -685,10 +657,9 @@ describe('DeviceSelector', () => {
       const user = userEvent.setup();
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ availableDevices: mockDevices }),
-        } as Response)
+        .mockResolvedValueOnce(
+          createMockResponse({ availableDevices: mockDevices })
+        )
         .mockImplementationOnce(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);

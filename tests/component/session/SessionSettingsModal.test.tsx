@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../utils/component-test-utils';
 import { SessionSettingsModal } from '@/components/session/SessionSettingsModal';
 import type { SessionSettings } from '@/types/session';
-import { useFetchMock } from '../../utils/mock-helpers';
+import { useFetchMock, createMockResponse, useConsoleErrorSpy } from '../../utils/mock-helpers';
 
 // Mock lucide-react
 vi.mock('lucide-react', () => ({
@@ -429,12 +429,13 @@ describe('SessionSettingsModal', () => {
   });
 
   describe('Save Functionality', () => {
+    useConsoleErrorSpy();
+
     it('saves settings when save button is clicked', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({})
+      );
 
       renderWithProviders(
         <SessionSettingsModal
@@ -468,10 +469,9 @@ describe('SessionSettingsModal', () => {
 
     it('saves updated skip threshold', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({})
+      );
 
       const enabledSettings: SessionSettings = {
         voteToSkip: true,
@@ -565,10 +565,9 @@ describe('SessionSettingsModal', () => {
 
     it('calls onSettingsUpdated after successful save', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({})
+      );
 
       renderWithProviders(
         <SessionSettingsModal
@@ -595,10 +594,9 @@ describe('SessionSettingsModal', () => {
 
     it('closes modal after successful save', async () => {
       const user = userEvent.setup();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({})
+      );
 
       renderWithProviders(
         <SessionSettingsModal
@@ -625,11 +623,9 @@ describe('SessionSettingsModal', () => {
 
     it('handles save API error', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Unauthorized' }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ error: 'Unauthorized' }, { ok: false })
+      );
 
       renderWithProviders(
         <SessionSettingsModal
@@ -656,12 +652,10 @@ describe('SessionSettingsModal', () => {
       // Modal should not close on error
       expect(mockOnClose).not.toHaveBeenCalled();
       expect(mockOnSettingsUpdated).not.toHaveBeenCalled();
-
     });
 
     it('handles network error during save', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       renderWithProviders(
@@ -685,12 +679,10 @@ describe('SessionSettingsModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
       });
-
     });
 
     it('handles non-Error exceptions', async () => {
       const user = userEvent.setup();
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockRejectedValue('Unknown error');
 
       renderWithProviders(
@@ -714,7 +706,6 @@ describe('SessionSettingsModal', () => {
       await waitFor(() => {
         expect(screen.getByText('Failed to update settings')).toBeInTheDocument();
       });
-
     });
   });
 

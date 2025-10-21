@@ -171,10 +171,9 @@ describe('AddTrackModal', () => {
     it('debounces search by 500ms', async () => {
       vi.useFakeTimers();
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ tracks: mockSearchResults }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ tracks: mockSearchResults })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -258,10 +257,9 @@ describe('AddTrackModal', () => {
 
     it('displays search results', async () => {
       vi.useFakeTimers();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ tracks: mockSearchResults }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ tracks: mockSearchResults })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -290,10 +288,9 @@ describe('AddTrackModal', () => {
 
     it('shows no results message when search returns empty', async () => {
       vi.useFakeTimers();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ tracks: [] }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ tracks: [] })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -320,10 +317,9 @@ describe('AddTrackModal', () => {
 
     it('handles search API error', async () => {
       vi.useFakeTimers();
-      mockFetch.mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Search failed' }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ error: 'Search failed' }, { ok: false })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -378,10 +374,7 @@ describe('AddTrackModal', () => {
       let searchCount = 0;
       mockFetch.mockImplementation(async () => {
         searchCount++;
-        return {
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response;
+        return createMockResponse({ tracks: mockSearchResults });
       });
 
       renderWithProviders(
@@ -419,10 +412,9 @@ describe('AddTrackModal', () => {
   describe('Track Display', () => {
     beforeEach(async () => {
       vi.useFakeTimers();
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ tracks: mockSearchResults }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ tracks: mockSearchResults })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -489,10 +481,9 @@ describe('AddTrackModal', () => {
 
     it('adds track to queue when Add button is clicked', async () => {
       // Mock search
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ tracks: mockSearchResults }),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ tracks: mockSearchResults })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -514,10 +505,9 @@ describe('AddTrackModal', () => {
       expect(screen.getByText('Test Track 1')).toBeInTheDocument();
 
       // Mock add track API
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({})
+      );
 
       const addButtons = screen.getAllByRole('button', { name: /add/i });
 
@@ -533,10 +523,9 @@ describe('AddTrackModal', () => {
     });
 
     it('shows loading state while adding track', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ tracks: mockSearchResults }),
-      } as Response);
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ tracks: mockSearchResults })
+      );
 
       renderWithProviders(
         <AddTrackModal
@@ -571,14 +560,12 @@ describe('AddTrackModal', () => {
 
     it('calls onTrackAdded callback after successful add', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(
         <AddTrackModal
@@ -610,14 +597,12 @@ describe('AddTrackModal', () => {
 
     it('closes modal after successful add', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       renderWithProviders(
         <AddTrackModal
@@ -649,14 +634,12 @@ describe('AddTrackModal', () => {
 
     it('clears search results after successful add', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({}),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({})
+        );
 
       const { rerender } = renderWithProviders(
         <AddTrackModal
@@ -703,14 +686,12 @@ describe('AddTrackModal', () => {
 
     it('handles add track API error', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          json: async () => ({ error: 'Track already in queue' }),
-        } as Response);
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({ error: 'Track already in queue' }, { ok: false })
+        );
 
       renderWithProviders(
         <AddTrackModal
@@ -746,10 +727,9 @@ describe('AddTrackModal', () => {
 
     it('handles network error during add', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
         .mockRejectedValueOnce(new Error('Network error'));
 
       renderWithProviders(
@@ -782,10 +762,9 @@ describe('AddTrackModal', () => {
 
     it('disables add button while adding', async () => {
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ tracks: mockSearchResults }),
-        } as Response)
+        .mockResolvedValueOnce(
+          createMockResponse({ tracks: mockSearchResults })
+        )
         .mockImplementationOnce(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(
@@ -835,10 +814,9 @@ describe('AddTrackModal', () => {
         }),
       ];
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ tracks: tracksWithVariedDurations }),
-      } as Response);
+      mockFetch.mockResolvedValue(
+        createMockResponse({ tracks: tracksWithVariedDurations })
+      );
 
       renderWithProviders(
         <AddTrackModal
