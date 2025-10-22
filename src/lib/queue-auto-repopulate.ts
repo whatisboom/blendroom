@@ -37,9 +37,8 @@ export async function checkAndRepopulateQueue(
     const queueService = new QueueGenerationService(accessToken);
     const newQueue = await queueService.generateQueue(session, targetSize);
 
-    // Merge with existing stable tracks
-    const stableTracks = session.queue.slice(0, 3);
-    session.queue = queueService.mergeWithStableQueue(stableTracks, newQueue);
+    // Merge with existing queue (preserves first 3 as stable)
+    session.queue = queueService.mergeWithStableQueue(session.queue, newQueue);
 
     session.updatedAt = Date.now();
     await store.set(session.id, session);

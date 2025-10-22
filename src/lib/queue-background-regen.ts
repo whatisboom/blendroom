@@ -114,12 +114,12 @@ async function performRegeneration(
       return;
     }
 
-    // Get stable tracks (next 3 tracks in queue)
-    const stableTracks = session.queue.slice(0, STABLE_TRACK_COUNT);
-    console.log(`[QueueRegen] Preserving ${stableTracks.length} stable tracks`);
+    // Preserve first 3 tracks as stable
+    const stableCount = Math.min(session.queue.length, STABLE_TRACK_COUNT);
+    console.log(`[QueueRegen] Preserving ${stableCount} stable tracks`);
 
     // Calculate how many new tracks we need
-    const targetSize = MAX_QUEUE_SIZE - stableTracks.length;
+    const targetSize = MAX_QUEUE_SIZE - stableCount;
 
     if (targetSize <= 0) {
       console.log(`[QueueRegen] Queue is full, skipping regeneration`);
@@ -132,15 +132,15 @@ async function performRegeneration(
 
     console.log(`[QueueRegen] Generated ${newQueue.length} new tracks`);
 
-    // Merge stable tracks with new queue
-    const mergedQueue = queueService.mergeWithStableQueue(stableTracks, newQueue);
+    // Merge existing queue with new queue (preserves first 3 as stable)
+    const mergedQueue = queueService.mergeWithStableQueue(session.queue, newQueue);
 
     // Update session
     session.queue = mergedQueue;
     session.updatedAt = Date.now();
     await store.set(sessionId, session);
 
-    console.log(`[QueueRegen] Updated queue with ${mergedQueue.length} total tracks (${stableTracks.length} stable, ${newQueue.length} new)`);
+    console.log(`[QueueRegen] Updated queue with ${mergedQueue.length} total tracks (${stableCount} stable, ${newQueue.length} new)`);
 
     // Broadcast queue update to all clients
     broadcastToSession(sessionId, WS_EVENTS.QUEUE_UPDATED, mergedQueue);

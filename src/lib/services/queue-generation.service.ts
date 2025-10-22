@@ -167,25 +167,41 @@ export class QueueGenerationService {
 
   /**
    * Merge new queue with stable tracks from existing queue
+   * Always ensures first 3 tracks are marked as stable
    */
   mergeWithStableQueue(
     existingQueue: QueueItem[],
     newQueue: QueueItem[]
   ): QueueItem[] {
-    // Keep next 3 tracks stable
-    const stableTracks = existingQueue.slice(0, 3).map((item, index) => ({
-      ...item,
-      position: index,
-      isStable: true,
-    }));
+    // Take up to first 3 tracks from existing queue
+    const stableTracks = existingQueue.slice(0, 3);
 
-    // Add new tracks after stable ones
-    const newTracks = newQueue.map((item, index) => ({
-      ...item,
-      position: stableTracks.length + index,
-      isStable: false,
-    }));
+    // Calculate how many new tracks we need to fill the stable window
+    const neededForStable = Math.max(0, 3 - stableTracks.length);
 
-    return [...stableTracks, ...newTracks];
+    // Split new queue into stable fill and remaining
+    const stableFill = newQueue.slice(0, neededForStable);
+    const remainingNew = newQueue.slice(neededForStable);
+
+    // Mark first 3 tracks (from existing + new) as stable
+    const merged = [
+      ...stableTracks.map((item, index) => ({
+        ...item,
+        position: index,
+        isStable: true,
+      })),
+      ...stableFill.map((item, index) => ({
+        ...item,
+        position: stableTracks.length + index,
+        isStable: true,
+      })),
+      ...remainingNew.map((item, index) => ({
+        ...item,
+        position: stableTracks.length + stableFill.length + index,
+        isStable: false,
+      })),
+    ];
+
+    return merged;
   }
 }

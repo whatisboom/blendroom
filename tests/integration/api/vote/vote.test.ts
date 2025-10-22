@@ -606,6 +606,7 @@ describe('POST /api/vote/skip', () => {
     const { getStore } = await import('@/lib/session');
     const mockStore = {
       set: vi.fn(),
+      get: vi.fn().mockResolvedValue(mockSession),
     };
     vi.mocked(getStore).mockReturnValue(mockStore as never);
 
@@ -650,6 +651,7 @@ describe('POST /api/vote/skip', () => {
     const { getStore } = await import('@/lib/session');
     const mockStore = {
       set: vi.fn(),
+      get: vi.fn().mockResolvedValue(mockSession),
     };
     vi.mocked(getStore).mockReturnValue(mockStore as never);
 

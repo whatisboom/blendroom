@@ -390,7 +390,22 @@ describe('SpotifyService', () => {
 
   describe('getPlaybackState', () => {
     it('fetches current playback state', async () => {
-      const mockState = { is_playing: true, item: { id: 'track-1' } };
+      const mockState = {
+        is_playing: true,
+        item: { id: 'track-1' },
+        progress_ms: 12345,
+        device: {
+          id: 'device-1',
+          is_active: true,
+          is_private_session: false,
+          is_restricted: false,
+          name: 'My Speaker',
+          type: 'Speaker',
+          volume_percent: 50
+        },
+        shuffle_state: false,
+        repeat_state: 'off'
+      };
 
       vi.mocked(mockClient.getMyCurrentPlaybackState).mockResolvedValue({
         body: mockState,

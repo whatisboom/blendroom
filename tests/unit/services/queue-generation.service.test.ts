@@ -221,8 +221,9 @@ describe('QueueGenerationService', () => {
 
       // Existing track should now be stable
       expect(merged[0].isStable).toBe(true);
-      // New track should not be stable
-      expect(merged[1].isStable).toBe(false);
+      // New track should also be stable to maintain 3-track stable window
+      // (when existing queue has < 3 tracks, fill remaining stable slots with new tracks)
+      expect(merged[1].isStable).toBe(true);
     });
 
     it('updates positions correctly', () => {
@@ -263,6 +264,45 @@ describe('QueueGenerationService', () => {
 
       expect(merged).toHaveLength(3);
       expect(merged.every((item) => item.isStable)).toBe(true);
+    });
+
+    it('marks exactly 3 stable tracks when existing queue has fewer than 3 items', () => {
+      // Scenario: User played first track, queue now has 2 tracks, auto-repopulate triggers
+      const existingQueue: QueueItem[] = Array.from({ length: 2 }, (_, i) => ({
+        track: createMockSpotifyTrack({ id: `existing-${i}` }),
+        position: i,
+        addedBy: 'algorithm',
+        addedAt: Date.now(),
+        isStable: true,
+      }));
+
+      const newQueue: QueueItem[] = Array.from({ length: 8 }, (_, i) => ({
+        track: createMockSpotifyTrack({ id: `new-${i}` }),
+        position: i,
+        addedBy: 'algorithm',
+        addedAt: Date.now(),
+        isStable: false,
+      }));
+
+      const merged = service.mergeWithStableQueue(existingQueue, newQueue);
+
+      // Should have 10 total tracks (2 existing + 8 new)
+      expect(merged).toHaveLength(10);
+
+      // First 2 should be from existing queue (stable)
+      expect(merged[0].track.id).toBe('existing-0');
+      expect(merged[0].isStable).toBe(true);
+      expect(merged[1].track.id).toBe('existing-1');
+      expect(merged[1].isStable).toBe(true);
+
+      // Third should be first from new queue (also stable to maintain 3-track stable window)
+      expect(merged[2].track.id).toBe('new-0');
+      expect(merged[2].isStable).toBe(true);
+
+      // Remaining should not be stable
+      for (let i = 3; i < 10; i++) {
+        expect(merged[i].isStable).toBe(false);
+      }
     });
   });
 });

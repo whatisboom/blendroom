@@ -62,10 +62,9 @@ export async function POST(
     const queueService = new QueueGenerationService(session.accessToken);
     const newQueue = await queueService.generateQueue(targetSession);
 
-    // Merge with stable tracks
-    const stableTracks = targetSession.queue.slice(0, 3);
+    // Merge with existing queue (preserves first 3 as stable)
     targetSession.queue = queueService.mergeWithStableQueue(
-      stableTracks,
+      targetSession.queue,
       newQueue
     );
 
