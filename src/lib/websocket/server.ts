@@ -8,6 +8,30 @@ import { subscribeToPattern, publishEvent } from "@/lib/redis-events";
 let io: SocketIOServer<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData> | null = null;
 
 /**
+ * Valid server-to-client event names
+ */
+const VALID_EVENTS: readonly (keyof ServerToClientEvents)[] = [
+  'participant_joined',
+  'participant_left',
+  'queue_updated',
+  'playback_state_changed',
+  'track_skipped',
+  'vote_updated',
+  'dj_assigned',
+  'dj_removed',
+  'session_settings_updated',
+  'session_ended',
+  'error',
+] as const;
+
+/**
+ * Type guard to validate event names
+ */
+function isValidEvent(event: string): event is keyof ServerToClientEvents {
+  return VALID_EVENTS.includes(event as keyof ServerToClientEvents);
+}
+
+/**
  * Initialize Socket.IO server
  */
 export function initializeSocketIO(server: HTTPServer | HTTPSServer) {
@@ -71,15 +95,21 @@ export function initializeSocketIO(server: HTTPServer | HTTPSServer) {
       }
 
       const sessionId = parts[1];
-      const event = parts[2] as keyof ServerToClientEvents;
+      const eventName = parts[2];
+
+      // Validate event name
+      if (!isValidEvent(eventName)) {
+        console.warn(`[WebSocket] Invalid event name: ${eventName}`);
+        return;
+      }
 
       // Parse message data
       const data = JSON.parse(message);
 
       // Broadcast to Socket.IO room
       if (io) {
-        io.to(sessionId).emit(event, data);
-        console.log(`[WebSocket] Broadcasted ${event} to session ${sessionId} via Redis`);
+        io.to(sessionId).emit(eventName, data);
+        console.log(`[WebSocket] Broadcasted ${eventName} to session ${sessionId} via Redis`);
       }
     } catch (error) {
       console.error("[WebSocket] Error handling Redis message:", error);
