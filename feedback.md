@@ -38,6 +38,7 @@ These are not immediate tasks. For each feature idea:
 - clicking on the device name should let you select a new device to move the playback to
 - allow the user to configure queue length and stable section size
 - expand the fetched artists for users to a larger number, possibly 50
+- create an in-app page to display test coverage that reads from the JSON coverage output and matches our app's visual style/branding
 
 ## Planned Features
 
