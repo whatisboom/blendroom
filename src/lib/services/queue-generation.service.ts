@@ -70,9 +70,8 @@ export class QueueGenerationService {
   }
 
   /**
-   * Get candidate tracks from Spotify using recommendations endpoint
-   * Strategy: Use Spotify's recommendation engine with seed artists and genres
-   * This is much more efficient than fetching from each artist individually
+   * Get candidate tracks from Spotify by fetching top tracks from common artists
+   * Strategy: Fetch top tracks from selected artists and shuffle for variety
    */
   private async getCandidateTracks(
     commonArtists: string[],
@@ -82,55 +81,30 @@ export class QueueGenerationService {
   ): Promise<Track[]> {
     const allTracks: Track[] = [];
 
-    // Strategy 1: Use recommendations with seed artists and genres (most efficient)
-    // Spotify allows up to 5 seeds total, so we'll make multiple calls if needed
+    // Select artists based on common artists and user profiles
     const selectedArtists = this.selectArtists(commonArtists, tasteProfiles);
-    const selectedGenres = commonGenres.slice(0, 5);
 
-    console.log(`Fetching recommendations using ${selectedArtists.length} artists and ${selectedGenres.length} genres`);
+    console.log(`Fetching top tracks from ${selectedArtists.length} artists`);
 
-    // Make multiple recommendation calls to get enough variety
-    // Each call can use up to 5 seeds
-    const recommendationCalls = Math.ceil(count / 20); // Get 20 tracks per call
-    const artistChunks = this.chunkArray(selectedArtists, 3); // Use 3 artists per call + 2 genres
+    // Fetch top tracks from each selected artist
+    // We'll fetch from enough artists to get the desired count
+    const artistsToFetch = Math.min(selectedArtists.length, Math.ceil(count / 8)); // ~8 tracks per artist
 
-    for (let i = 0; i < Math.min(recommendationCalls, artistChunks.length); i++) {
+    for (let i = 0; i < artistsToFetch; i++) {
+      const artistId = selectedArtists[i];
       try {
-        const seedArtists = artistChunks[i];
-        const seedGenres = selectedGenres.slice(0, 2); // Use 2 genres per call
-
-        const recommendations = await this.spotifyService.getRecommendations({
-          seedArtists,
-          seedGenres: seedGenres.length > 0 ? seedGenres : undefined,
-          limit: 20,
-        });
-
-        allTracks.push(...recommendations);
-        console.log(`Got ${recommendations.length} recommendations from call ${i + 1}/${recommendationCalls}`);
+        const tracks = await this.spotifyService.searchTracksByArtist(artistId, 10);
+        allTracks.push(...tracks);
+        console.log(`Got ${tracks.length} top tracks from artist ${artistId} (${i + 1}/${artistsToFetch})`);
       } catch (error) {
-        console.error(`Failed to get recommendations for call ${i + 1}:`, error);
+        console.error(`Failed to get tracks for artist ${artistId}:`, error);
       }
     }
 
-    // If we didn't get enough tracks, fall back to artist top tracks
-    if (allTracks.length < count / 2) {
-      console.log(`Not enough recommendations (${allTracks.length}), fetching top tracks from popular artists`);
-
-      for (const artistId of selectedArtists.slice(0, 5)) {
-        try {
-          const tracks = await this.spotifyService.searchTracksByArtist(artistId, 10);
-          allTracks.push(...tracks);
-          console.log(`Got ${tracks.length} top tracks from artist ${artistId}`);
-        } catch (error) {
-          console.error(`Failed to get tracks for artist ${artistId}:`, error);
-        }
-      }
-    }
-
-    // Shuffle tracks to mix variety
+    // Shuffle tracks to mix variety from different artists
     const shuffled = this.shuffleArray(allTracks);
 
-    console.log(`Successfully collected ${shuffled.length} candidate tracks`);
+    console.log(`Successfully collected ${shuffled.length} candidate tracks from ${artistsToFetch} artists`);
     return shuffled.slice(0, count);
   }
 
