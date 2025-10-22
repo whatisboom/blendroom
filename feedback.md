@@ -23,7 +23,7 @@ Claude Code will edit this file directly to reflect progress after each phase.
 
 ## UX
 
-For reference: ![now playing section](now-playing.png)
+**Before working on UX items, read the screenshot:** `now-playing.png` shows the current layout.
 
 - [NEW] playback controls and voting take up too much space
 - [NEW] voting could be moved into now playing/track info
