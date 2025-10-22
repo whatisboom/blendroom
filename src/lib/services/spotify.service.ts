@@ -2,6 +2,37 @@ import { createSpotifyClient, spotifyRateLimiter } from "@/lib/utils/spotify-cli
 import type { SpotifyTrack, AudioFeatures, SpotifyArtist, Track, SpotifyDevice, PlaybackState } from "@/types";
 
 /**
+ * Options for play method
+ */
+interface PlayOptions {
+  device_id?: string;
+  uris?: string[];
+  position_ms?: number;
+}
+
+/**
+ * Options for pause method
+ */
+interface PauseOptions {
+  device_id?: string;
+}
+
+/**
+ * Options for skip method
+ */
+interface SkipOptions {
+  device_id?: string;
+}
+
+/**
+ * Options for add to queue method
+ */
+interface AddToQueueOptions {
+  uri: string;
+  device_id?: string;
+}
+
+/**
  * Spotify service for interacting with the Spotify Web API
  */
 export class SpotifyService {
@@ -18,7 +49,11 @@ export class SpotifyService {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.getMyTopTracks({ limit, time_range: timeRange });
-      return response.body.items as SpotifyTrack[];
+      const items = response.body.items;
+      if (!Array.isArray(items)) {
+        return [];
+      }
+      return items;
     });
   }
 
@@ -29,7 +64,11 @@ export class SpotifyService {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.getMyTopArtists({ limit, time_range: timeRange });
-      return response.body.items as SpotifyArtist[];
+      const items = response.body.items;
+      if (!Array.isArray(items)) {
+        return [];
+      }
+      return items;
     });
   }
 
@@ -72,7 +111,11 @@ export class SpotifyService {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.searchTracks(query, { limit });
-      return response.body.tracks?.items as SpotifyTrack[] || [];
+      const items = response.body.tracks?.items;
+      if (!Array.isArray(items)) {
+        return [];
+      }
+      return items;
     });
   }
 
@@ -82,12 +125,12 @@ export class SpotifyService {
   async searchTracksByArtist(artistId: string, limit = 20): Promise<Track[]> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-
-      // Get artist's top tracks
       const response = await client.getArtistTopTracks(artistId, "US");
-
-      // Return up to limit tracks
-      return (response.body.tracks as Track[]).slice(0, limit);
+      const tracks = response.body.tracks;
+      if (!Array.isArray(tracks)) {
+        return [];
+      }
+      return tracks.slice(0, limit);
     });
   }
 
@@ -97,12 +140,13 @@ export class SpotifyService {
   async searchTracksByGenre(genre: string, limit = 20): Promise<Track[]> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-
-      // Use genre as a search query
       const query = `genre:"${genre}"`;
       const response = await client.searchTracks(query, { limit });
-
-      return (response.body.tracks?.items as Track[]) || [];
+      const items = response.body.tracks?.items;
+      if (!Array.isArray(items)) {
+        return [];
+      }
+      return items;
     });
   }
 
@@ -113,7 +157,11 @@ export class SpotifyService {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.getMyDevices();
-      return response.body.devices as SpotifyDevice[];
+      const devices = response.body.devices;
+      if (!Array.isArray(devices)) {
+        return [];
+      }
+      return devices;
     });
   }
 
@@ -123,7 +171,7 @@ export class SpotifyService {
   async play(deviceId?: string, uris?: string[], positionMs = 0): Promise<void> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-      const options: Record<string, unknown> = {};
+      const options: PlayOptions = {};
       if (deviceId) options.device_id = deviceId;
       if (uris) options.uris = uris;
       if (positionMs > 0) options.position_ms = positionMs;
@@ -137,7 +185,7 @@ export class SpotifyService {
   async pause(deviceId?: string): Promise<void> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-      const options: Record<string, unknown> = {};
+      const options: PauseOptions = {};
       if (deviceId) options.device_id = deviceId;
       await client.pause(options);
     });
@@ -149,7 +197,7 @@ export class SpotifyService {
   async skipToNext(deviceId?: string): Promise<void> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-      const options: Record<string, unknown> = {};
+      const options: SkipOptions = {};
       if (deviceId) options.device_id = deviceId;
       await client.skipToNext(options);
     });
@@ -199,7 +247,7 @@ export class SpotifyService {
   async addToQueue(trackUri: string, deviceId?: string): Promise<void> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
-      const options: Record<string, unknown> = { uri: trackUri };
+      const options: AddToQueueOptions = { uri: trackUri };
       if (deviceId) options.device_id = deviceId;
       await client.addToQueue(trackUri, options);
     });
