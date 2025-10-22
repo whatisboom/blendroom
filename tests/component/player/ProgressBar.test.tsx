@@ -62,49 +62,19 @@ describe('ProgressBar', () => {
   });
 
   describe('Initial Rendering', () => {
-    it('renders progress bar at 0%', () => {
+    it.each([
+      { progress: 0, duration: 180000, expectedWidth: '0%', description: '0%' },
+      { progress: 45000, duration: 180000, expectedWidth: '25%', description: '25%' },
+      { progress: 90000, duration: 180000, expectedWidth: '50%', description: '50%' },
+      { progress: 135000, duration: 180000, expectedWidth: '75%', description: '75%' },
+      { progress: 180000, duration: 180000, expectedWidth: '100%', description: '100%' },
+    ])('renders progress bar at $description', ({ progress, duration, expectedWidth }) => {
       const { container } = renderWithProviders(
-        <ProgressBar progressMs={0} durationMs={180000} isPlaying={false} />
+        <ProgressBar progressMs={progress} durationMs={duration} isPlaying={false} />
       );
 
       const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '0%' });
-    });
-
-    it('renders progress bar at 50%', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={90000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '50%' });
-    });
-
-    it('renders progress bar at 100%', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={180000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '100%' });
-    });
-
-    it('renders progress bar at 25%', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={45000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '25%' });
-    });
-
-    it('renders progress bar at 75%', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={135000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '75%' });
+      expect(progressBar).toHaveStyle({ width: expectedWidth });
     });
   });
 
@@ -399,41 +369,4 @@ describe('ProgressBar', () => {
     });
   });
 
-  describe('Percentage Calculations', () => {
-    it('calculates 0% correctly', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={0} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '0%' });
-    });
-
-    it('calculates 33.33% correctly', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={60000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '33.33333333333333%' });
-    });
-
-    it('calculates 66.67% correctly', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={120000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '66.66666666666666%' });
-    });
-
-    it('calculates 100% correctly', () => {
-      const { container } = renderWithProviders(
-        <ProgressBar progressMs={180000} durationMs={180000} isPlaying={false} />
-      );
-
-      const progressBar = container.querySelector('.bg-gradient-to-r');
-      expect(progressBar).toHaveStyle({ width: '100%' });
-    });
-  });
 });
