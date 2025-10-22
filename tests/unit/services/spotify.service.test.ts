@@ -59,7 +59,6 @@ describe('SpotifyService', () => {
       getAudioFeaturesForTracks: vi.fn(),
       searchTracks: vi.fn(),
       getArtistTopTracks: vi.fn(),
-      getRecommendations: vi.fn(),
       getMyDevices: vi.fn(),
       play: vi.fn(),
       pause: vi.fn(),
@@ -302,88 +301,6 @@ describe('SpotifyService', () => {
       const tracks = await service.searchTracksByGenre('unknown-genre');
 
       expect(tracks).toEqual([]);
-    });
-  });
-
-  describe('getRecommendations', () => {
-    it('fetches recommendations with seed artists', async () => {
-      const mockTracks = [createMockSpotifyTrack({ id: 'track-1' })];
-
-      vi.mocked(mockClient.getRecommendations).mockResolvedValue({
-        body: { tracks: mockTracks },
-      });
-
-      const tracks = await service.getRecommendations({
-        seedArtists: ['artist-1', 'artist-2'],
-      });
-
-      expect(mockClient.getRecommendations).toHaveBeenCalledWith({
-        limit: 20,
-        seed_artists: 'artist-1,artist-2',
-      });
-      expect(tracks).toEqual(mockTracks);
-    });
-
-    it('fetches recommendations with all seed types', async () => {
-      const mockTracks = [createMockSpotifyTrack({ id: 'track-1' })];
-
-      vi.mocked(mockClient.getRecommendations).mockResolvedValue({
-        body: { tracks: mockTracks },
-      });
-
-      await service.getRecommendations({
-        seedArtists: ['artist-1'],
-        seedTracks: ['track-1'],
-        seedGenres: ['rock'],
-        limit: 50,
-      });
-
-      expect(mockClient.getRecommendations).toHaveBeenCalledWith({
-        limit: 50,
-        seed_artists: 'artist-1',
-        seed_tracks: 'track-1',
-        seed_genres: 'rock',
-      });
-    });
-
-    it('includes target audio features', async () => {
-      const mockTracks = [createMockSpotifyTrack({ id: 'track-1' })];
-
-      vi.mocked(mockClient.getRecommendations).mockResolvedValue({
-        body: { tracks: mockTracks },
-      });
-
-      await service.getRecommendations({
-        seedArtists: ['artist-1'],
-        targetEnergy: 0.8,
-        targetValence: 0.6,
-      });
-
-      expect(mockClient.getRecommendations).toHaveBeenCalledWith({
-        limit: 20,
-        seed_artists: 'artist-1',
-        target_energy: 0.8,
-        target_valence: 0.6,
-      });
-    });
-
-    it('limits seeds to 5 items each', async () => {
-      const mockTracks = [createMockSpotifyTrack({ id: 'track-1' })];
-
-      vi.mocked(mockClient.getRecommendations).mockResolvedValue({
-        body: { tracks: mockTracks },
-      });
-
-      await service.getRecommendations({
-        seedArtists: ['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'],
-        seedTracks: ['t1', 't2', 't3', 't4', 't5', 't6'],
-        seedGenres: ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'],
-      });
-
-      const call = vi.mocked(mockClient.getRecommendations).mock.calls[0][0] as Record<string, unknown>;
-      expect((call.seed_artists as string).split(',').length).toBe(5);
-      expect((call.seed_tracks as string).split(',').length).toBe(5);
-      expect((call.seed_genres as string).split(',').length).toBe(5);
     });
   });
 

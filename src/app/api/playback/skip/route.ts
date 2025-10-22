@@ -6,6 +6,7 @@ import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
 import { checkAndRepopulateQueue } from "@/lib/queue-auto-repopulate";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { normalizeQueue } from "@/lib/utils/queue";
 import { PlaybackState } from "@/types/spotify";
 import { z } from "zod";
 
@@ -68,6 +69,9 @@ export async function POST(req: NextRequest) {
       if (skippedTrack) {
         targetSession.playedTracks.push(skippedTrack.track.id);
       }
+
+      // Normalize queue positions and stable flags
+      targetSession.queue = normalizeQueue(targetSession.queue);
     }
 
     // Clear skip votes for the current track

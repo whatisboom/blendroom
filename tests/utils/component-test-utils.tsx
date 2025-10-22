@@ -6,6 +6,7 @@ import { SessionProvider } from 'next-auth/react';
 export const mockSession = {
   user: {
     id: 'test-user-id',
+    spotifyId: 'test-spotify-id',
     name: 'Test User',
     email: 'test@example.com',
     image: null,

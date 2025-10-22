@@ -42,7 +42,7 @@ describe('QueueGenerationService', () => {
         createMockSpotifyTrack({ id: `track-${i}` })
       );
 
-      vi.spyOn(mockSpotifyService, 'getRecommendations').mockResolvedValue(mockTracks);
+      vi.spyOn(mockSpotifyService, 'searchTracksByArtist').mockResolvedValue(mockTracks);
       vi.spyOn(service as never, 'spotifyService' as never, 'get').mockReturnValue(mockSpotifyService);
 
       const session = createMockSession({
@@ -67,7 +67,7 @@ describe('QueueGenerationService', () => {
         createMockSpotifyTrack({ id: `track-${i}` })
       );
 
-      vi.spyOn(mockSpotifyService, 'getRecommendations').mockResolvedValue(mockTracks);
+      vi.spyOn(mockSpotifyService, 'searchTracksByArtist').mockResolvedValue(mockTracks);
       vi.spyOn(service as never, 'spotifyService' as never, 'get').mockReturnValue(mockSpotifyService);
 
       const session = createMockSession({
@@ -96,7 +96,7 @@ describe('QueueGenerationService', () => {
         createMockSpotifyTrack({ id: 'new-2' }),
       ];
 
-      vi.spyOn(mockSpotifyService, 'getRecommendations').mockResolvedValue(mockTracks);
+      vi.spyOn(mockSpotifyService, 'searchTracksByArtist').mockResolvedValue(mockTracks);
       vi.spyOn(service as never, 'spotifyService' as never, 'get').mockReturnValue(mockSpotifyService);
 
       const session = createMockSession({
@@ -128,7 +128,7 @@ describe('QueueGenerationService', () => {
         createMockSpotifyTrack({ id: 'new-2' }),
       ];
 
-      vi.spyOn(mockSpotifyService, 'getRecommendations').mockResolvedValue(mockTracks);
+      vi.spyOn(mockSpotifyService, 'searchTracksByArtist').mockResolvedValue(mockTracks);
       vi.spyOn(service as never, 'spotifyService' as never, 'get').mockReturnValue(mockSpotifyService);
 
       const session = createMockSession({
@@ -151,7 +151,7 @@ describe('QueueGenerationService', () => {
         createMockSpotifyTrack({ id: `track-${i}` })
       );
 
-      vi.spyOn(mockSpotifyService, 'getRecommendations').mockResolvedValue(mockTracks);
+      vi.spyOn(mockSpotifyService, 'searchTracksByArtist').mockResolvedValue(mockTracks);
       vi.spyOn(service as never, 'spotifyService' as never, 'get').mockReturnValue(mockSpotifyService);
 
       const session = createMockSession({

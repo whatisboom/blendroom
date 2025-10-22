@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { checkAndRepopulateQueue } from "@/lib/queue-auto-repopulate";
+import { normalizeQueue } from "@/lib/utils/queue";
 import { z } from "zod";
 
 const trackChangeSchema = z.object({
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest) {
       const completedTrack = targetSession.queue.shift();
       if (completedTrack) {
         targetSession.playedTracks.push(completedTrack.track.id);
+
+        // Normalize queue positions and stable flags
+        targetSession.queue = normalizeQueue(targetSession.queue);
+
         targetSession.updatedAt = Date.now();
         await store.set(sessionId, targetSession);
 

@@ -395,10 +395,11 @@ spotify-collab-app/
 61. ✅ Add logging for algorithm decisions
 62. Test with edge cases (1 user, 20 users, conflicting tastes)
 
-**Note**: Due to Spotify's recommendations API deprecation (November 2024), the queue generation now uses:
-- Artist top tracks instead of seed-based recommendations
-- Shuffle and blend tracks from top 5 common artists
-- Session `playedTracks` array to prevent duplicate songs across session lifetime
+**Note**: Queue generation uses artist top tracks (Spotify's recommendations API was deprecated in November 2024):
+- Fetches top tracks from selected common artists
+- Shuffles and blends tracks for variety
+- Session `playedTracks` array prevents duplicate songs across session lifetime
+- No deprecated API calls
 
 ### **8. Session API Routes** ✅ COMPLETED
 63. ✅ Create `POST /api/session/create` - generate unique code, init session
