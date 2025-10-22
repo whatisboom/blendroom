@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
-import { checkAndRepopulateQueue } from "@/lib/queue-auto-repopulate";
-import { normalizeQueue } from "@/lib/utils/queue";
+import { handleTrackCompletion } from "@/lib/utils/playback";
 import { z } from "zod";
 
 const trackChangeSchema = z.object({
@@ -52,21 +51,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find and remove the track from queue if it's the first one
+    // Handle track completion if it's the first track in queue
     if (targetSession.queue.length > 0 && targetSession.queue[0].track.id === trackId) {
-      const completedTrack = targetSession.queue.shift();
-      if (completedTrack) {
-        targetSession.playedTracks.push(completedTrack.track.id);
-
-        // Normalize queue positions and stable flags
-        targetSession.queue = normalizeQueue(targetSession.queue);
-
-        targetSession.updatedAt = Date.now();
-        await store.set(sessionId, targetSession);
-
-        // Check if queue needs repopulation
-        await checkAndRepopulateQueue(targetSession, store, session.accessToken);
-      }
+      await handleTrackCompletion(sessionId, targetSession, store, session.accessToken);
     }
 
     return NextResponse.json({ success: true });

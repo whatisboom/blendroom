@@ -1,5 +1,5 @@
 import { createSpotifyClient, spotifyRateLimiter } from "@/lib/utils/spotify-client";
-import type { SpotifyTrack, AudioFeatures, SpotifyArtist, Track, SpotifyDevice } from "@/types";
+import type { SpotifyTrack, AudioFeatures, SpotifyArtist, Track, SpotifyDevice, PlaybackState } from "@/types";
 
 /**
  * Spotify service for interacting with the Spotify Web API
@@ -158,11 +158,11 @@ export class SpotifyService {
   /**
    * Get current playback state
    */
-  async getPlaybackState(): Promise<unknown> {
+  async getPlaybackState(): Promise<PlaybackState> {
     return spotifyRateLimiter.execute(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.getMyCurrentPlaybackState();
-      return response.body;
+      return response.body as PlaybackState;
     });
   }
 

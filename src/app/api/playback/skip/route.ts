@@ -4,10 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
-import { checkAndRepopulateQueue } from "@/lib/queue-auto-repopulate";
-import { broadcastToSession } from "@/lib/websocket/server";
-import { normalizeQueue } from "@/lib/utils/queue";
-import { PlaybackState } from "@/types/spotify";
+import { handleTrackCompletion } from "@/lib/utils/playback";
 import { z } from "zod";
 
 const skipSchema = z.object({
@@ -63,40 +60,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Remove the first track from queue and add to played tracks
-    if (targetSession.queue.length > 0) {
-      const skippedTrack = targetSession.queue.shift();
-      if (skippedTrack) {
-        targetSession.playedTracks.push(skippedTrack.track.id);
-      }
-
-      // Normalize queue positions and stable flags
-      targetSession.queue = normalizeQueue(targetSession.queue);
-    }
-
     // Clear skip votes for the current track
     targetSession.votes.skip = [];
     targetSession.updatedAt = Date.now();
     await store.set(sessionId, targetSession);
 
-    // Check if queue needs repopulation
-    await checkAndRepopulateQueue(targetSession, store, session.accessToken);
-
-    // Get the updated session to broadcast the potentially repopulated queue
-    const updatedSession = await store.get(sessionId);
-
-    // Skip to next track
+    // Skip to next track on Spotify
     const spotifyService = new SpotifyService(session.accessToken);
     await spotifyService.skipToNext(deviceId || targetSession.activeDeviceId);
 
-    // Get current playback state and broadcast to all session participants
-    const playbackState = await spotifyService.getPlaybackState();
-    broadcastToSession(sessionId, "playback_state_changed", playbackState as PlaybackState);
-
-    // Broadcast queue update (includes skip vote reset and potential repopulation)
-    if (updatedSession) {
-      broadcastToSession(sessionId, "queue_updated", updatedSession.queue);
-    }
+    // Handle track completion (update queue, broadcast state)
+    await handleTrackCompletion(sessionId, targetSession, store, session.accessToken);
 
     return NextResponse.json({ success: true });
   } catch (error) {

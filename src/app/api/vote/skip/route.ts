@@ -5,6 +5,7 @@ import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { handleTrackCompletion } from "@/lib/utils/playback";
 import { z } from "zod";
 
 const voteSkipSchema = z.object({
@@ -101,15 +102,19 @@ export async function POST(req: NextRequest) {
         (v) => v.trackId !== trackId
       );
 
-      // Skip to next track
+      // Skip to next track on Spotify
       const spotifyService = new SpotifyService(session.accessToken);
       await spotifyService.skipToNext(targetSession.activeDeviceId);
 
+      // Save cleared votes
       targetSession.updatedAt = Date.now();
       await store.set(sessionId, targetSession);
 
       // Broadcast track skipped event
       broadcastToSession(sessionId, "track_skipped", { voteCount });
+
+      // Handle track completion (update queue, broadcast state)
+      await handleTrackCompletion(sessionId, targetSession, store, session.accessToken);
 
       return NextResponse.json({
         success: true,
