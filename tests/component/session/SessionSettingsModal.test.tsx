@@ -62,7 +62,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('calls onClose when modal is closed', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <SessionSettingsModal
@@ -205,7 +205,7 @@ describe('SessionSettingsModal', () => {
 
   describe('Vote to Skip Toggle', () => {
     it('toggles vote to skip when clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <SessionSettingsModal
@@ -226,7 +226,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('shows skip threshold when vote to skip is toggled on', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <SessionSettingsModal
@@ -247,7 +247,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('hides skip threshold when vote to skip is toggled off', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const enabledSettings: SessionSettings = {
         voteToSkip: true,
         skipThreshold: 5,
@@ -272,7 +272,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('enables save button when vote to skip is changed', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <SessionSettingsModal
@@ -380,7 +380,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('calls onClose when cancel is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <SessionSettingsModal
@@ -399,7 +399,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('is disabled while saving', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       let resolveSave!: () => void;
       mockFetch.mockImplementation(() => new Promise((resolve) => {
         resolveSave = () => resolve(createMockResponse({}));
@@ -441,7 +441,7 @@ describe('SessionSettingsModal', () => {
     useConsoleErrorSpy();
 
     it('saves settings when save button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({})
       );
@@ -477,7 +477,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('saves updated skip threshold', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({})
       );
@@ -518,7 +518,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('shows loading state while saving', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(
@@ -545,7 +545,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('disables save button while saving', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(
@@ -573,7 +573,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('calls onSettingsUpdated after successful save', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({})
       );
@@ -602,7 +602,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('closes modal after successful save', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({})
       );
@@ -631,7 +631,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('handles save API error', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ error: 'Unauthorized' }, { ok: false })
       );
@@ -664,7 +664,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('handles network error during save', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       renderWithProviders(
@@ -691,7 +691,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('handles non-Error exceptions', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockRejectedValue('Unknown error');
 
       renderWithProviders(
@@ -758,7 +758,7 @@ describe('SessionSettingsModal', () => {
     });
 
     it('resets to initial values when reopened after canceling', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       const { rerender } = renderWithProviders(
         <SessionSettingsModal

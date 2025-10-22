@@ -20,7 +20,7 @@ describe('PlayerControls', () => {
     useConsoleErrorSpy(); // Suppress console.error for error handling tests
 
     it('handles onPlay error gracefully', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn().mockRejectedValue(new Error('Playback failed'));
 
       renderWithProviders(
@@ -36,7 +36,7 @@ describe('PlayerControls', () => {
     });
 
     it('handles onPause error gracefully', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPause = vi.fn().mockRejectedValue(new Error('Pause failed'));
 
       renderWithProviders(
@@ -52,7 +52,7 @@ describe('PlayerControls', () => {
     });
 
     it('handles onSkip error gracefully', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onSkip = vi.fn().mockRejectedValue(new Error('Skip failed'));
 
       renderWithProviders(
@@ -155,7 +155,7 @@ describe('PlayerControls', () => {
 
   describe('Play/Pause Button', () => {
     it('calls onPlay when play button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -168,7 +168,7 @@ describe('PlayerControls', () => {
     });
 
     it('calls onPause when pause button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPause = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -181,7 +181,7 @@ describe('PlayerControls', () => {
     });
 
     it('shows loading state while play request is pending', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -196,7 +196,7 @@ describe('PlayerControls', () => {
     });
 
     it('shows loading state while pause request is pending', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPause = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -220,7 +220,7 @@ describe('PlayerControls', () => {
     });
 
     it('does not call onPlay when clicked by non-DJ', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn();
 
       renderWithProviders(
@@ -237,7 +237,7 @@ describe('PlayerControls', () => {
 
   describe('Skip Button', () => {
     it('calls onSkip when skip button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onSkip = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -250,7 +250,7 @@ describe('PlayerControls', () => {
     });
 
     it('shows loading state while skip request is pending', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onSkip = vi.fn().mockResolvedValue(undefined);
 
       renderWithProviders(
@@ -274,7 +274,7 @@ describe('PlayerControls', () => {
     });
 
     it('does not call onSkip when clicked by non-DJ', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onSkip = vi.fn();
 
       renderWithProviders(
@@ -291,7 +291,7 @@ describe('PlayerControls', () => {
 
   describe('Loading States', () => {
     it('disables play/pause button while loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
 
       renderWithProviders(
@@ -305,7 +305,7 @@ describe('PlayerControls', () => {
     });
 
     it('disables skip button while loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onSkip = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
 
       renderWithProviders(
@@ -319,7 +319,7 @@ describe('PlayerControls', () => {
     });
 
     it('allows skip button to be clicked while play is loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onPlay = vi.fn(() => new Promise(resolve => setTimeout(resolve, 100)));
       const onSkip = vi.fn().mockResolvedValue(undefined);
 

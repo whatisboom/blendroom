@@ -8,6 +8,21 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup/vitest.setup.ts'],
+
+    // Performance optimizations
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        isolate: true,
+        maxThreads: 4,
+        minThreads: 2,
+      },
+    },
+    maxConcurrency: 5,
+    testTimeout: 10000,
+    hookTimeout: 10000,
+
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

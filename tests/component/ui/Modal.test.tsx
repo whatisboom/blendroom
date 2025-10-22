@@ -110,7 +110,7 @@ describe('Modal', () => {
 
   describe('Close Functionality', () => {
     it('calls onClose when close button is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
 
       renderWithProviders(<Modal {...defaultProps} onClose={onClose} />);
@@ -122,7 +122,7 @@ describe('Modal', () => {
     });
 
     it('calls onClose when backdrop is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
 
       const { container } = renderWithProviders(<Modal {...defaultProps} onClose={onClose} />);
@@ -134,7 +134,7 @@ describe('Modal', () => {
     });
 
     it('does not call onClose when modal content is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
 
       renderWithProviders(<Modal {...defaultProps} onClose={onClose} />);
@@ -145,7 +145,7 @@ describe('Modal', () => {
     });
 
     it('calls onClose when Escape key is pressed', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
 
       renderWithProviders(<Modal {...defaultProps} onClose={onClose} />);
@@ -156,7 +156,7 @@ describe('Modal', () => {
     });
 
     it('does not call onClose when other keys are pressed', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
 
       renderWithProviders(<Modal {...defaultProps} onClose={onClose} />);
@@ -372,7 +372,7 @@ describe('Modal', () => {
     });
 
     it('handles onClose callback change', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const firstOnClose = vi.fn();
       const secondOnClose = vi.fn();
 

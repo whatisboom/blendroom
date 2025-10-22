@@ -21,7 +21,13 @@
       "Bash(xargs kill:*)",
       "Bash(git reset:*)",
       "Bash(npm run test:unit:*)",
-      "Bash(npm run test:coverage:*)"
+      "Bash(npm run test:coverage:*)",
+      "Bash(npm test:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git apply:*)",
+      "Bash(npx vitest:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

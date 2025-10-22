@@ -83,7 +83,7 @@ describe('DeviceSelector', () => {
     useConsoleErrorSpy();
 
     it('shows loading state when finding devices', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -99,7 +99,7 @@ describe('DeviceSelector', () => {
     });
 
     it('calls API with correct sessionId', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: mockDevices })
       );
@@ -118,7 +118,7 @@ describe('DeviceSelector', () => {
     });
 
     it('displays found devices', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: mockDevices })
       );
@@ -135,7 +135,7 @@ describe('DeviceSelector', () => {
     });
 
     it('shows device types', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: mockDevices })
       );
@@ -158,7 +158,7 @@ describe('DeviceSelector', () => {
     });
 
     it('shows active indicator for active device', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: mockDevices })
       );
@@ -173,7 +173,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles API error', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ error: 'No devices found' }, { ok: false })
       );
@@ -189,7 +189,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles network error', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -203,7 +203,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles non-Error exceptions', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockRejectedValue('Unknown error');
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
@@ -217,7 +217,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles empty device list', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: [] })
       );
@@ -233,7 +233,7 @@ describe('DeviceSelector', () => {
     });
 
     it('clears previous error when finding devices again', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       // First call fails
       mockFetch.mockResolvedValueOnce(
@@ -265,7 +265,7 @@ describe('DeviceSelector', () => {
 
   describe('Device List View', () => {
     beforeEach(async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockResolvedValue(
         createMockResponse({ availableDevices: mockDevices })
       );
@@ -313,7 +313,7 @@ describe('DeviceSelector', () => {
     useConsoleErrorSpy();
 
     it('calls API with device ID when device is selected', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       // First call to find devices
       mockFetch.mockResolvedValueOnce(
@@ -345,7 +345,7 @@ describe('DeviceSelector', () => {
     });
 
     it('shows connected state after successful selection', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -372,7 +372,7 @@ describe('DeviceSelector', () => {
     });
 
     it('calls onDeviceConnected callback', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const onDeviceConnected = vi.fn();
 
       mockFetch
@@ -402,7 +402,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles selection error', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -430,7 +430,7 @@ describe('DeviceSelector', () => {
     });
 
     it('shows loading state during selection', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -457,7 +457,7 @@ describe('DeviceSelector', () => {
     });
 
     it('does not call callback if onDeviceConnected is not provided', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -487,7 +487,7 @@ describe('DeviceSelector', () => {
 
   describe('Connected State', () => {
     beforeEach(async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -529,7 +529,7 @@ describe('DeviceSelector', () => {
     });
 
     it('returns to device selection when change device is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       const changeButton = screen.getByText('Change Device');
       await user.click(changeButton);
@@ -539,7 +539,7 @@ describe('DeviceSelector', () => {
     });
 
     it('clears device list when changing device', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       const changeButton = screen.getByText('Change Device');
       await user.click(changeButton);
@@ -549,7 +549,7 @@ describe('DeviceSelector', () => {
     });
 
     it('handles missing device name gracefully', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       const devicesWithoutName: SpotifyDevice[] = [{
         id: 'device-no-name',
         name: '',
@@ -599,7 +599,7 @@ describe('DeviceSelector', () => {
 
   describe('Refresh Functionality', () => {
     it('refetches devices when refresh is clicked', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       // Use mockResolvedValueOnce for each call
       mockFetch
@@ -633,7 +633,7 @@ describe('DeviceSelector', () => {
     });
 
     it('shows "Refreshing..." text while refreshing', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -655,7 +655,7 @@ describe('DeviceSelector', () => {
     });
 
     it('disables refresh button while loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
 
       mockFetch
         .mockResolvedValueOnce(
@@ -687,7 +687,7 @@ describe('DeviceSelector', () => {
     });
 
     it('disables buttons with proper attributes when loading', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       mockFetch.mockImplementation(() => new Promise(() => {}));
 
       renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);

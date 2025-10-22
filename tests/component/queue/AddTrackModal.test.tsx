@@ -84,7 +84,7 @@ describe('AddTrackModal', () => {
     });
 
     it('calls onClose when modal is closed', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: null });
       renderWithProviders(
         <AddTrackModal
           isOpen={true}
