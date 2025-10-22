@@ -25,9 +25,10 @@ vi.mock('lucide-react', () => ({
   ),
 }));
 
-// Mock nanoid
+// Mock nanoid with unique IDs
+let nanoidCounter = 0;
 vi.mock('nanoid', () => ({
-  nanoid: vi.fn(() => 'test-toast-id'),
+  nanoid: vi.fn(() => `test-toast-id-${nanoidCounter++}`),
 }));
 
 describe('Toast Component', () => {
