@@ -8,7 +8,13 @@ interface UseSocketOptions {
   autoConnect?: boolean;
 }
 
-export function useSocket({ sessionId, autoConnect = true }: UseSocketOptions = {}) {
+interface UseSocketReturn {
+  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+  isConnected: boolean;
+  isJoined: boolean;
+}
+
+export function useSocket({ sessionId, autoConnect = true }: UseSocketOptions = {}): UseSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);

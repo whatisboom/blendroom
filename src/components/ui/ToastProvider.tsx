@@ -114,7 +114,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
  * toast.success("Track added to queue");
  * toast.error("Failed to play track");
  */
-export function useToast() {
+export function useToast(): ToastContextValue {
   const context = useContext(ToastContext);
 
   if (!context) {
