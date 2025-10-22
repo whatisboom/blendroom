@@ -159,10 +159,27 @@ export class SpotifyService {
    * Get current playback state
    */
   async getPlaybackState(): Promise<PlaybackState> {
-    return spotifyRateLimiter.execute(async () => {
+    return spotifyRateLimiter.execute<PlaybackState>(async () => {
       const client = createSpotifyClient(this.accessToken);
       const response = await client.getMyCurrentPlaybackState();
-      return response.body as PlaybackState;
+      const body = response.body;
+
+      return {
+        is_playing: body.is_playing ?? false,
+        progress_ms: body.progress_ms ?? 0,
+        item: body.item ?? null,
+        device: body.device ?? {
+          id: '',
+          is_active: false,
+          is_private_session: false,
+          is_restricted: false,
+          name: '',
+          type: '',
+          volume_percent: 0
+        },
+        shuffle_state: body.shuffle_state ?? false,
+        repeat_state: body.repeat_state ?? 'off',
+      };
     });
   }
 
