@@ -10,16 +10,12 @@ export default defineConfig({
     setupFiles: ['./tests/setup/vitest.setup.ts'],
 
     // Performance optimizations
-    pool: 'threads',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: false,
-        isolate: true,
-        maxThreads: 4,
-        minThreads: 2,
+      forks: {
+        singleFork: false,
       },
     },
-    maxConcurrency: 5,
     testTimeout: 10000,
     hookTimeout: 10000,
 
