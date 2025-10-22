@@ -7,6 +7,7 @@ import { NowPlaying, ProgressBar, PlayerControls, DeviceSelector } from "@/compo
 import { AddTrackModal } from "@/components/queue/AddTrackModal";
 import { SortableQueueList } from "@/components/queue/SortableQueueList";
 import { SessionSettingsModal } from "@/components/session/SessionSettingsModal";
+import { VotingControls } from "@/components/voting";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
 import { WS_EVENTS } from "@/lib/websocket/events";
@@ -581,6 +582,17 @@ export default function SessionPage({
                   onPause={handlePause}
                   onSkip={handleSkip}
                 />
+
+                {/* Voting Controls */}
+                {currentTrack && userSession?.user?.id && (
+                  <VotingControls
+                    sessionId={session.id}
+                    currentTrack={currentTrack}
+                    sessionSettings={session.settings}
+                    userId={userSession.user.id}
+                    socket={socket}
+                  />
+                )}
               </>
             )}
           </div>
