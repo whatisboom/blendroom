@@ -400,7 +400,7 @@ describe('SessionSettingsModal', () => {
 
     it('is disabled while saving', async () => {
       const user = userEvent.setup();
-      let resolveSave: () => void;
+      let resolveSave!: () => void;
       mockFetch.mockImplementation(() => new Promise((resolve) => {
         resolveSave = () => resolve(createMockResponse({}));
       }));
@@ -423,9 +423,11 @@ describe('SessionSettingsModal', () => {
       const saveButton = screen.getByRole('button', { name: /save changes/i });
       await user.click(saveButton);
 
-      // After the click completes, React has updated state and cancel should be disabled
+      // Wait for React to update state and disable the cancel button
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      expect(cancelButton).toBeDisabled();
+      await waitFor(() => {
+        expect(cancelButton).toBeDisabled();
+      });
 
       // Clean up: resolve the promise and wait for React to process the update
       resolveSave();
