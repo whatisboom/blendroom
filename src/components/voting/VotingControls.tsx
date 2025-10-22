@@ -23,7 +23,7 @@ export function VotingControls({
   sessionId,
   currentTrack,
   sessionSettings,
-  userId,
+  userId: _userId,
   socket,
 }: VotingControlsProps) {
   // Vote state
