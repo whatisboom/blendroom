@@ -517,10 +517,11 @@ describe('DeviceSelector', () => {
       expect(screen.getByText('My Laptop (Computer)')).toBeInTheDocument();
     });
 
-    it('shows success icon', () => {
-      const { container } = renderWithProviders(<DeviceSelector sessionId={mockSessionId} />);
-      const checkIcon = container.querySelector('.bg-green-500');
-      expect(checkIcon).toBeDefined();
+    it('shows success indicator with green styling', () => {
+      // The connected state should have green-themed visual elements
+      const connectedText = screen.getByText('Device Connected');
+      const containerDiv = connectedText.closest('.bg-green-900\\/20');
+      expect(containerDiv).toBeInTheDocument();
     });
 
     it('shows change device button', () => {
