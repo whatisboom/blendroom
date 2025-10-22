@@ -3,6 +3,24 @@ import { SessionStore } from "./store.interface";
 import Redis from "ioredis";
 
 /**
+ * Type guard to validate Session data from Redis
+ */
+function isValidSession(data: unknown): data is Session {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const session = data as Record<string, unknown>;
+
+  return (
+    typeof session.id === 'string' &&
+    typeof session.code === 'string' &&
+    typeof session.hostId === 'string' &&
+    Array.isArray(session.participants) &&
+    Array.isArray(session.queue) &&
+    typeof session.createdAt === 'number'
+  );
+}
+
+/**
  * Redis session store implementation
  * For production use with persistent, scalable storage
  */
@@ -38,7 +56,14 @@ export class RedisStore implements SessionStore {
   async get(sessionId: string): Promise<Session | null> {
     const data = await this.redis.get(this.keyPrefix + sessionId);
     if (!data) return null;
-    return JSON.parse(data) as Session;
+
+    const parsed = JSON.parse(data);
+    if (!isValidSession(parsed)) {
+      console.error(`Invalid session data from Redis for session ${sessionId}`);
+      return null;
+    }
+
+    return parsed;
   }
 
   async getByCode(code: string): Promise<Session | null> {
