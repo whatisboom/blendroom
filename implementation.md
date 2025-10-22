@@ -1,5 +1,7 @@
 # Spotify Collaborative Session App - Implementation Plan
 
+> **Note:** This is a historical implementation plan. Most Phase 1 features are now complete and the app is functional. See the "Current Status Summary" section for completed features.
+
 ## Project Overview
 
 A collaborative Spotify session app where multiple users' musical tastes algorithmically influence the playlist in real-time. Users OAuth through Spotify, join sessions, and their music preferences blend to create an intelligent, dynamic queue based on audio features and voting.
@@ -32,12 +34,11 @@ A collaborative Spotify session app where multiple users' musical tastes algorit
 - Prevent duplicate tracks in queue
 
 **Playback Control (P0)**
-- Host selects playback mode: Web SDK or Device API
-- Web Playback SDK integration (in-browser)
-- Device API integration (control user's active Spotify device)
-- Play/pause/skip controls (host + DJs)
-- Display current track with progress
-- Display upcoming queue (10 tracks)
+- Device API integration (control user's active Spotify device) ✅ Complete
+- Play/pause/skip controls (host + DJs) ✅ Complete
+- Display current track with progress ✅ Complete
+- Display upcoming queue (10 tracks) ✅ Complete
+- Web Playback SDK integration (in-browser) - Phase 2
 
 **Queue Management (P0)**
 - View current queue
@@ -129,7 +130,6 @@ A collaborative Spotify session app where multiple users' musical tastes algorit
 │  │  │  - QueueGenerationService                    │     │  │
 │  │  │  - SpotifyService                            │     │  │
 │  │  │  - SessionService                            │     │  │
-│  │  │  - VotingService                             │     │  │
 │  │  └──────────────────────────────────────────────┘     │  │
 │  │                                                        │  │
 │  │  ┌──────────────────────────────────────────────┐     │  │
@@ -155,13 +155,14 @@ A collaborative Spotify session app where multiple users' musical tastes algorit
 
 ## Technology Stack
 
-- **Framework**: Next.js 14+ (App Router) with TypeScript
+- **Framework**: Next.js 15.1.6 (App Router) with TypeScript
+- **UI Library**: React 19
 - **Styling**: Tailwind CSS
 - **Authentication**: NextAuth.js with Spotify provider
 - **Real-time**: Socket.io
 - **Session Storage**: In-memory (default) or Redis (optional)
 - **Spotify SDK**: spotify-web-api-node
-- **State Management**: React Context / Zustand
+- **State Management**: Zustand
 - **Containerization**: Docker + Docker Compose
 
 ## Project Structure
@@ -539,14 +540,16 @@ Trade-offs accepted:
 145. ✅ Add "Add Track" button (DJ only) - opens AddTrackModal
 146. Show who added each manual track - pending implementation
 
-### **20. Frontend: Voting UI** ✅ COMPLETED
-147. ✅ Add vote-to-skip button for all participants
-148. ✅ Show vote progress (X/Y votes)
-149. ✅ Disable after user votes
-150. ✅ Add like button for current track
-151. ✅ Show like count
-152. ✅ Animate button states - basic implementation
-153. ✅ Show toast when skip threshold reached
+### **20. Frontend: Voting UI** ⏳ IN PROGRESS
+147. ❌ Add vote-to-skip button for all participants
+148. ❌ Show vote progress (X/Y votes)
+149. ❌ Disable after user votes
+150. ❌ Add like button for current track
+151. ❌ Show like count
+152. ❌ Animate button states
+153. ✅ Show toast when skip threshold reached (WebSocket listener exists)
+
+**Note**: Voting API routes and WebSocket events are complete, but UI components not yet implemented.
 
 ### **21. Frontend: Add Track Modal** ✅ COMPLETED
 154. ✅ Create search modal (DJ only) (`/src/components/queue/AddTrackModal.tsx`)

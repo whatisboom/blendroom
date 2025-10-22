@@ -14,7 +14,8 @@ A collaborative Spotify session app where multiple users' musical tastes algorit
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js 15.1.6 with App Router
+- **UI Library**: React 19
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Authentication**: NextAuth.js
@@ -143,27 +144,37 @@ See [implementation.md](./implementation.md) for the complete implementation pla
 
 ### Current Status
 
-#### ✅ Completed Features
+#### ✅ Phase 1 MVP Complete
+Core features implemented and functional:
 - Project setup and configuration
 - Type definitions
-- Authentication (NextAuth with Spotify OAuth)
+- Authentication (NextAuth with Spotify OAuth, HTTPS with custom domain)
 - Session management (create, join, leave, DJ privileges)
 - Taste analysis and queue generation algorithm
-- Playback control (Device API and Web Playback SDK)
-- Voting system (skip votes and likes)
-- WebSocket real-time updates (Socket.IO)
+- Playback control (Device API with device selection)
+- Voting system backend (API routes for skip/like votes)
+- WebSocket real-time updates (Socket.IO with Redis pub/sub bridge)
 - Frontend UI (landing page, session page, player controls, queue display)
+- DJ management UI (assign/remove DJ privileges)
+- Track search and manual queue additions
+- Drag-and-drop queue reordering with stable track protection
+- Toast notifications for all real-time events
+- Background queue regeneration with debouncing
+- Auto-repopulate queue when low
 - Redis session store support
 
-#### 🚀 Ready for Testing
-The app is fully functional and ready for real-world testing with multiple users.
+#### ⏳ In Progress
+- Voting UI (skip/like buttons) - backend complete, frontend components needed
 
-#### 📋 Future Enhancements
-- DJ assignment UI
-- Track search and manual queue additions
-- Drag-and-drop queue reordering
-- Toast notifications
+#### 🚀 Ready for Production
+The app is fully functional and ready for deployment and real-world testing with multiple users.
+
+#### 📋 Future Enhancements (Phase 2)
+- Web Playback SDK integration (in-browser playback)
+- Display who added each manual track in queue
 - Session analytics and history
+- Advanced algorithm tuning (genre balancing, energy pacing)
+- Session customization (mood, explicit filter, era preferences)
 
 ## Troubleshooting
 
