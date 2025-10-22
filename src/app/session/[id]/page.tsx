@@ -11,6 +11,8 @@ import { VotingControls } from "@/components/voting";
 import { useSocket } from "@/hooks/useSocket";
 import { useToast } from "@/components/ui";
 import { WS_EVENTS } from "@/lib/websocket/events";
+import { trackEvent } from "@/lib/logrocket";
+import { LOGROCKET_EVENTS } from "@/lib/logrocket-events";
 import type { SpotifyTrack } from "@/types";
 
 interface QueueItem {
@@ -366,6 +368,12 @@ export default function SessionPage({
       setIsPlaying(true);
       // Refresh session to update queue
       await fetchSession();
+
+      // Track playback started event
+      trackEvent(LOGROCKET_EVENTS.PLAYBACK_STARTED, {
+        sessionId: session.id,
+        queueLength: session.queue.length,
+      });
     } catch (err) {
       console.error("Failed to play:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to play";
@@ -389,6 +397,11 @@ export default function SessionPage({
       }
 
       setIsPlaying(false);
+
+      // Track playback paused event
+      trackEvent(LOGROCKET_EVENTS.PLAYBACK_PAUSED, {
+        sessionId: session.id,
+      });
     } catch (err) {
       console.error("Failed to pause:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to pause";
@@ -414,6 +427,13 @@ export default function SessionPage({
       // Reset progress and refresh session to update queue
       setProgressMs(0);
       await fetchSession();
+
+      // Track skip event
+      trackEvent(LOGROCKET_EVENTS.TRACK_SKIPPED, {
+        sessionId: session.id,
+        trackId: currentTrack?.id,
+        trackName: currentTrack?.name,
+      });
     } catch (err) {
       console.error("Failed to skip:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to skip";
@@ -486,6 +506,14 @@ export default function SessionPage({
     toast.success("Track added to queue");
     // Refresh session (queue will also update via WebSocket)
     fetchSession();
+
+    // Track event
+    if (session) {
+      trackEvent(LOGROCKET_EVENTS.TRACK_ADDED, {
+        sessionId: session.id,
+        queueLength: session.queue.length + 1,
+      });
+    }
   };
 
   const handleSettingsUpdated = () => {
@@ -496,6 +524,14 @@ export default function SessionPage({
   const handleQueueReordered = () => {
     // Show success toast
     toast.success("Queue reordered");
+
+    // Track event
+    if (session) {
+      trackEvent(LOGROCKET_EVENTS.QUEUE_REORDERED, {
+        sessionId: session.id,
+        queueLength: session.queue.length,
+      });
+    }
     // Session will update via WebSocket
   };
 

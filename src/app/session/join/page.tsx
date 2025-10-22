@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/logrocket";
+import { LOGROCKET_EVENTS } from "@/lib/logrocket-events";
 
 export default function JoinSessionPage() {
   const router = useRouter();
@@ -30,6 +32,12 @@ export default function JoinSessionPage() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to join session");
       }
+
+      // Track session joined
+      trackEvent(LOGROCKET_EVENTS.SESSION_JOINED, {
+        sessionId: data.session.id,
+        sessionCode: code.toUpperCase(),
+      });
 
       // Redirect to session page
       router.push(`/session/${data.session.id}`);

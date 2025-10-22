@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/logrocket";
+import { LOGROCKET_EVENTS } from "@/lib/logrocket-events";
 
 export default function CreateSessionPage() {
   const router = useRouter();
@@ -35,6 +37,14 @@ export default function CreateSessionPage() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to create session");
       }
+
+      // Track session creation
+      trackEvent(LOGROCKET_EVENTS.SESSION_CREATED, {
+        sessionId: data.session.id,
+        customCode: showCustomCode && customCode ? true : false,
+        voteToSkip: settings.voteToSkip,
+        skipThreshold: settings.skipThreshold,
+      });
 
       // Redirect to session page
       router.push(`/session/${data.session.id}`);

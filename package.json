@@ -19,6 +19,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "ioredis": "^5.4.2",
+    "logrocket": "^10.1.0",
     "lucide-react": "^0.545.0",
     "nanoid": "^5.0.9",
     "next": "^15.1.6",
