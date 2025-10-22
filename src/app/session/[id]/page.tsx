@@ -85,6 +85,31 @@ export default function SessionPage({
     fetchSession();
   }, [resolvedParams.id]);
 
+  // Fetch initial playback state when session loads with an active device
+  useEffect(() => {
+    const fetchInitialPlaybackState = async () => {
+      if (!session?.activeDeviceId) return;
+
+      try {
+        const response = await fetch("/api/playback/state");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.state?.item) {
+          setCurrentTrack(data.state.item);
+          setIsPlaying(data.state.is_playing || false);
+          setProgressMs(data.state.progress_ms || 0);
+          previousTrackIdRef.current = data.state.item.id;
+          console.log("[SessionPage] Initial playback state restored");
+        }
+      } catch (err) {
+        console.error("Failed to fetch initial playback state:", err);
+      }
+    };
+
+    fetchInitialPlaybackState();
+  }, [session?.activeDeviceId]);
+
   // WebSocket event listeners
   useEffect(() => {
     if (!socket || !isJoined) return;
@@ -185,7 +210,7 @@ export default function SessionPage({
 
   // Poll playback state for progress updates (lightweight polling for progress bar)
   useEffect(() => {
-    if (!session || !isPlaying) return;
+    if (!session) return;
 
     // Only poll if session has an active device (playback has been initialized)
     const hasActiveDevice = !!session.activeDeviceId;
@@ -239,7 +264,7 @@ export default function SessionPage({
     const interval = setInterval(fetchPlaybackState, 10000);
 
     return () => clearInterval(interval);
-  }, [session, isPlaying]);
+  }, [session]);
 
   const fetchSession = async () => {
     try {

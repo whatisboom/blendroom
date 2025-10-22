@@ -28,7 +28,8 @@
       "Bash(git apply:*)",
       "Bash(npx vitest:*)",
       "Bash(find:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []
