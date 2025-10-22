@@ -514,6 +514,7 @@ describe('ToastProvider', () => {
   });
 
   it('uses correct default durations', async () => {
+    const user = userEvent.setup({ delay: null });
     function DurationTester() {
       const toast = useToast();
       const [lastDuration, setLastDuration] = useState<number | null>(null);
@@ -563,10 +564,10 @@ describe('ToastProvider', () => {
       </ToastProvider>
     );
 
-    fireEvent.click(screen.getByText('Success'));
+    await user.click(screen.getByText('Success'));
     expect(screen.getByText('Duration: 5000')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Error'));
+    await user.click(screen.getByText('Error'));
     expect(screen.getByText('Duration: 7000')).toBeInTheDocument();
   });
 
@@ -586,7 +587,8 @@ describe('ToastProvider', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('handles rapid toast creation', () => {
+  it('handles rapid toast creation', async () => {
+    const user = userEvent.setup({ delay: null });
     render(
       <ToastProvider>
         <ToastTester />
@@ -594,9 +596,9 @@ describe('ToastProvider', () => {
     );
 
     // Click multiple times rapidly
-    fireEvent.click(screen.getByText('Show Success'));
-    fireEvent.click(screen.getByText('Show Error'));
-    fireEvent.click(screen.getByText('Show Info'));
+    await user.click(screen.getByText('Show Success'));
+    await user.click(screen.getByText('Show Error'));
+    await user.click(screen.getByText('Show Info'));
 
     expect(screen.getAllByRole('alert')).toHaveLength(3);
   });

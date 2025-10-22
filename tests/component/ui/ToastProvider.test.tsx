@@ -116,6 +116,7 @@ describe('ToastProvider', () => {
 
   describe('Success Toast', () => {
     it('shows success toast when success method is called', async () => {
+      const user = userEvent.setup({ delay: null });
 
       renderWithProviders(
         <ToastProvider>
@@ -123,7 +124,7 @@ describe('ToastProvider', () => {
         </ToastProvider>
       );
 
-      fireEvent.click(screen.getByText('Show Success'));
+      await user.click(screen.getByText('Show Success'));
 
       await waitFor(() => {
         expect(screen.getByText('Success message')).toBeInTheDocument();
@@ -131,13 +132,15 @@ describe('ToastProvider', () => {
     });
 
     it('displays correct icon for success toast', async () => {
+      const user = userEvent.setup({ delay: null });
+
       renderWithProviders(
         <ToastProvider>
           <TestComponent />
         </ToastProvider>
       );
 
-      fireEvent.click(screen.getByText('Show Success'));
+      await user.click(screen.getByText('Show Success'));
 
       await waitFor(() => {
         expect(screen.getByTestId('check-icon')).toBeInTheDocument();
