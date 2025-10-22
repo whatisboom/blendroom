@@ -306,3 +306,4 @@ const result = await spotifyRateLimiter.execute(() =>
 - Never use `any` - ESLint will catch
 - Never use `as Type` casts - fix underlying types
 - Import from `@/types` barrel export
+- never commit with failing tests
