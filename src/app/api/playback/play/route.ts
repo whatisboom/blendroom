@@ -5,13 +5,35 @@ import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
 import { broadcastToSession } from "@/lib/websocket/server";
-import { PlaybackState } from "@/types/spotify";
 import { z } from "zod";
 
 const playSchema = z.object({
   sessionId: z.string().min(1),
   deviceId: z.string().optional(),
 });
+
+/**
+ * Spotify API error structure
+ */
+interface SpotifyApiError {
+  statusCode?: number;
+  body?: {
+    error?: {
+      message?: string;
+    };
+  };
+}
+
+/**
+ * Type guard for Spotify API errors
+ */
+function isSpotifyApiError(error: unknown): error is SpotifyApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error
+  );
+}
 
 /**
  * POST /api/playback/play
@@ -92,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     // Get current playback state and broadcast to all session participants
     const playbackState = await spotifyService.getPlaybackState();
-    broadcastToSession(sessionId, "playback_state_changed", playbackState as PlaybackState);
+    broadcastToSession(sessionId, "playback_state_changed", playbackState);
 
     // Also broadcast queue update since we removed the first track
     broadcastToSession(sessionId, "queue_updated", targetSession.queue);
@@ -102,11 +124,9 @@ export async function POST(req: NextRequest) {
     console.error("Error starting playback:", error);
 
     // Handle Spotify API errors
-    if (error && typeof error === 'object' && 'statusCode' in error) {
-      const spotifyError = error as { statusCode?: number; body?: { error?: { message?: string } } };
-
+    if (isSpotifyApiError(error)) {
       // 404 typically means no active device found
-      if (spotifyError.statusCode === 404) {
+      if (error.statusCode === 404) {
         return NextResponse.json(
           {
             error: "No active Spotify device found. Please open Spotify on a device and start playing, then try again.",
@@ -116,10 +136,10 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const errorMessage = spotifyError.body?.error?.message || "Spotify API error";
+      const errorMessage = error.body?.error?.message || "Spotify API error";
       return NextResponse.json(
         { error: errorMessage },
-        { status: spotifyError.statusCode || 400 }
+        { status: error.statusCode || 400 }
       );
     }
 

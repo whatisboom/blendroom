@@ -76,11 +76,13 @@ async function executeQueueRegeneration(
     console.error(`[QueueRegen] Error regenerating queue for session ${sessionId}:`, error);
 
     // Log additional error details
-    if (error && typeof error === 'object') {
+    if (error instanceof Error) {
       console.error('[QueueRegen] Error details:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
+        message: error.message,
+        stack: error.stack,
       });
+    } else if (error && typeof error === 'object') {
+      console.error('[QueueRegen] Error details:', error);
     }
   } finally {
     // Release lock

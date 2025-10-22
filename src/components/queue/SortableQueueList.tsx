@@ -190,7 +190,10 @@ export function SortableQueueList({
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+    const id = event.active.id;
+    if (typeof id === 'string') {
+      setActiveId(id);
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
