@@ -39,7 +39,8 @@ npm run test:watch       # Run tests in watch mode
 **SpotifyService** (`spotify.service.ts`):
 - Wrapper around spotify-web-api-node
 - Handles rate limiting via spotifyRateLimiter
-- Methods: getUserTopTracks, getUserTopArtists, getRecommendations, etc.
+- Methods: getUserTopTracks, getUserTopArtists, searchTracksByArtist, etc.
+- Note: getRecommendations removed (deprecated Spotify API)
 
 **TasteAnalysisService** (`taste-analysis.service.ts`):
 - Analyzes user listening preferences
@@ -88,7 +89,7 @@ npm run test:watch       # Run tests in watch mode
 **Process**:
 1. Fetch each user's top 20 tracks/artists (TasteAnalysisService)
 2. Calculate session profile (common artists, genres)
-3. Get candidate tracks from Spotify recommendations API
+3. Get candidate tracks from artist top tracks (fetches ~8 tracks per selected artist)
 4. Score each track:
    - **Participant match (50%)**: How many users share this artist/genre
    - **Genre match (30%)**: Overlap with common genres
@@ -197,11 +198,18 @@ Standard structure for all API routes:
 - Influences future queue generation (boosts similar artists)
 - Stored in `session.votes.like`
 
-**Frontend Implementation** (Not Yet Implemented):
-- ⏳ SkipVoteButton component needed
-- ⏳ LikeButton component needed
-- ⏳ Vote progress UI needed
-- ✅ Toast notifications for vote events (already integrated)
+**Frontend Implementation** (Complete):
+- ✅ SkipVoteButton component (`src/components/voting/SkipVoteButton.tsx`)
+  - Vote progress bar showing X/Y votes
+  - Visual states: default, voted (green), loading
+- ✅ LikeButton component (`src/components/voting/LikeButton.tsx`)
+  - Heart icon with toggle like/unlike
+  - Shows like count, scale animation
+- ✅ VotingControls wrapper (`src/components/voting/VotingControls.tsx`)
+  - WebSocket integration for real-time updates
+  - Clears skip votes on track change
+  - Maintains like votes across tracks
+- ✅ Toast notifications for vote events
 
 ## Type Safety Rules
 
