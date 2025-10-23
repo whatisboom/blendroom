@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../utils/component-test-utils';
 import { NowPlaying } from '@/components/player/NowPlaying';
@@ -8,6 +8,15 @@ import { createMockSpotifyTrack } from '../../factories/spotify.factory';
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
     <img src={src} alt={alt} />
+  ),
+}));
+
+// Mock QRCodeDisplay component
+vi.mock('@/components/session', () => ({
+  QRCodeDisplay: ({ sessionCode }: { sessionCode: string }) => (
+    <div data-testid="qr-code-display" data-session-code={sessionCode}>
+      QR Code: {sessionCode}
+    </div>
   ),
 }));
 
@@ -307,6 +316,49 @@ describe('NowPlaying', () => {
       expect(screen.getByRole('heading')).toBeInTheDocument(); // Track info
       expect(screen.getByRole('img')).toBeInTheDocument(); // Album art
       expect(screen.getByRole('link')).toBeInTheDocument(); // Spotify link
+    });
+  });
+
+  describe('QR Code', () => {
+    it('renders QR code when sessionCode is provided', () => {
+      const track = createMockSpotifyTrack();
+      renderWithProviders(
+        <NowPlaying track={track} sessionCode="ABC123" />
+      );
+
+      const qrCode = screen.getByTestId('qr-code-display');
+      expect(qrCode).toBeInTheDocument();
+      expect(qrCode).toHaveAttribute('data-session-code', 'ABC123');
+    });
+
+    it('does not render QR code when sessionCode is not provided', () => {
+      const track = createMockSpotifyTrack();
+      renderWithProviders(<NowPlaying track={track} />);
+
+      expect(screen.queryByTestId('qr-code-display')).not.toBeInTheDocument();
+    });
+
+    it('does not render QR code when sessionCode is undefined', () => {
+      const track = createMockSpotifyTrack();
+      renderWithProviders(
+        <NowPlaying track={track} sessionCode={undefined} />
+      );
+
+      expect(screen.queryByTestId('qr-code-display')).not.toBeInTheDocument();
+    });
+
+    it('renders QR code with different session codes', () => {
+      const track = createMockSpotifyTrack();
+      const { rerender } = renderWithProviders(
+        <NowPlaying track={track} sessionCode="XYZ789" />
+      );
+
+      let qrCode = screen.getByTestId('qr-code-display');
+      expect(qrCode).toHaveAttribute('data-session-code', 'XYZ789');
+
+      rerender(<NowPlaying track={track} sessionCode="DEF456" />);
+      qrCode = screen.getByTestId('qr-code-display');
+      expect(qrCode).toHaveAttribute('data-session-code', 'DEF456');
     });
   });
 });

@@ -2,13 +2,15 @@
 
 import type { SpotifyTrack } from "@/types";
 import Image from "next/image";
+import { QRCodeDisplay } from "@/components/session";
 
 interface NowPlayingProps {
   track: SpotifyTrack | null;
   isPlaying?: boolean;
+  sessionCode?: string;
 }
 
-export function NowPlaying({ track, isPlaying = false }: NowPlayingProps) {
+export function NowPlaying({ track, isPlaying = false, sessionCode }: NowPlayingProps) {
   if (!track) {
     return (
       <div className="flex items-center gap-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -90,6 +92,13 @@ export function NowPlaying({ track, isPlaying = false }: NowPlayingProps) {
           {track.album.name}
         </p>
       </div>
+
+      {/* QR Code */}
+      {sessionCode && (
+        <div className="flex-shrink-0">
+          <QRCodeDisplay sessionCode={sessionCode} size={96} />
+        </div>
+      )}
 
       {/* Spotify Link */}
       <a

@@ -621,7 +621,11 @@ export default function SessionPage({
             ) : (
               <>
                 {/* Now Playing Display */}
-                <NowPlaying track={currentTrack} isPlaying={isPlaying} />
+                <NowPlaying
+                  track={currentTrack}
+                  isPlaying={isPlaying}
+                  sessionCode={session?.code}
+                />
 
                 {/* Progress Bar */}
                 {currentTrack && (
