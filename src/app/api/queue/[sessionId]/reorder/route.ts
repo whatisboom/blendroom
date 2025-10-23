@@ -4,6 +4,7 @@ import { authOptions } from "@/auth";
 import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { normalizeQueue } from "@/lib/utils/queue";
 import { z } from "zod";
 
 const reorderQueueSchema = z.object({
@@ -85,10 +86,8 @@ export async function PUT(
     const [removed] = targetSession.queue.splice(fromIndex, 1);
     targetSession.queue.splice(toIndex, 0, removed);
 
-    // Update positions
-    targetSession.queue.forEach((item, index) => {
-      item.position = index;
-    });
+    // Normalize queue to ensure first 3 tracks are always stable and positions are correct
+    targetSession.queue = normalizeQueue(targetSession.queue);
 
     targetSession.updatedAt = Date.now();
 

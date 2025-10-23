@@ -5,6 +5,7 @@ import { getStore } from "@/lib/session";
 import { SessionService } from "@/lib/services/session.service";
 import { SpotifyService } from "@/lib/services/spotify.service";
 import { broadcastToSession } from "@/lib/websocket/server";
+import { normalizeQueue } from "@/lib/utils/queue";
 import { z } from "zod";
 
 const playSchema = z.object({
@@ -108,6 +109,10 @@ export async function POST(req: NextRequest) {
     const nowPlaying = targetSession.queue.shift();
     if (nowPlaying) {
       targetSession.playedTracks.push(nowPlaying.track.id);
+
+      // Normalize queue to ensure first 3 tracks are always stable
+      targetSession.queue = normalizeQueue(targetSession.queue);
+
       targetSession.updatedAt = Date.now();
       await store.set(sessionId, targetSession);
     }
